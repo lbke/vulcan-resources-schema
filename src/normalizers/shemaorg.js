@@ -6,6 +6,9 @@
  * https://github.com/schemaorg/schemaorg/tree/master/data/releases/XX/all-layers.jsonld
  *
  * Currently used version of schema.org: 3.4
+ *
+ * domainIncludes: the classes a property belongs to
+ * rangeIncludes: the possible type for an abstract entity (e.g owner can be Person or Organization)
  */
 const fs = require("fs");
 const path = require("path");
@@ -26,10 +29,10 @@ const createOutdir = () => mkdirp.sync(OUTDIR);
  * @param {*} schema
  */
 const getDomainsAsArray = schema => {
-  const rawDomains = schema["http://schema.org/domainIncludes"];
-  if (!rawDomains) return [];
+  const rawDomains = schema["http://schema.org/domainIncludes"] || [];
   return Array.isArray(rawDomains) ? rawDomains : [rawDomains];
 };
+const getRanges = R.propOr("http://schema.org/rangeIncludes", []);
 
 /**
  * Extract the graph from the schemas (other metadatas are not useful)
@@ -38,11 +41,22 @@ const getDomainsAsArray = schema => {
 const getGraph = schemas => schemas["@graph"][0]["@graph"];
 
 /**
+ * Normalize the ranges
+ * @param {*} ranges
+ */
+const normalizeRanges = R.reduce(
+  (res, range) => ({ ...res, [range["@id"]]: range }),
+  {}
+);
+/**
  * Remove the domainIncludes part of the schema
  * Avoid redundancy during the normalization process
  * @param {*} schema
  */
-const cleanLinkedSchema = R.omit(["http://schema.org/domainIncludes"]);
+const cleanLinkedSchema = R.omit([
+  "http://schema.org/domainIncludes",
+  "http://schema.org/rangeIncludes"
+]);
 /**
  * Fill the domains with the schema according to its dependency
  * @param {*} graph The whole graph
@@ -68,14 +82,21 @@ const fillDomains = (graph, schema, domains) => {
  */
 const normalizeGraph = graph => {
   return graph.reduce((normalizedGraph, schema) => {
-    const res = { ...normalizedGraph };
+    let res = { ...normalizedGraph };
     const key = schema["@id"];
     // add the schema to the result if it does not exist
     const cleanSchema = cleanLinkedSchema(schema);
     res[key] = cleanSchema;
+    // normalize the ranges
+    const normalizedRanges = R.compose(
+      normalizeRanges,
+      getRanges
+    )(normalizedGraph);
+    res = R.set(R.lensProp("possibleTypes"), normalizedRanges, res);
     // fill the related entities fields (domain) with the current schema
     domains = getDomainsAsArray(schema);
-    return fillDomains(res, schema, domains);
+    res = fillDomains(res, schema, domains);
+    return res;
   }, {});
 };
 
