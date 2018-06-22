@@ -46,15 +46,26 @@ const getDomainsAsArray = schema => {
 const getGraph = schemas => schemas["@graph"][0]["@graph"];
 
 /**
+ * Remove the domainIncludes part of the schema
+ * Avoid redundancy during the normalization process
+ * @param {*} schema
+ */
+const cleanLinkedSchema = R.omit(["http://schema.org/domainIncludes"]);
+/**
  * Fill the domains with the schema according to its dependency
  * @param {*} graph The whole graph
  * @param {*} schema A low leval field
  * @param {*} domains An array of domains the low level field is included in
  */
 const fillDomains = (graph, schema, domains) => {
+  const cleanSchema = cleanLinkedSchema(schema);
   return domains.reduce(
     (res, domain) =>
-      R.set(R.lensPath([domain["@id"], "domains", schema["@id"]]), schema, res),
+      R.set(
+        R.lensPath([domain["@id"], "domains", schema["@id"]]),
+        cleanSchema,
+        res
+      ),
     graph
   );
 };

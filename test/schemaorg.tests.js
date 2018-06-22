@@ -41,18 +41,22 @@ test("normalize a schema with no domains", t => {
   t.deepEqual(normalizedGraph, result);
   t.end();
 });
+
+const someFieldId = {
+  "@id": "http://schema.org/somefield"
+};
+const someField = {
+  ...someFieldId,
+  "http://schema.org/domainIncludes": {
+    "@id": coffeeShop["@id"]
+  }
+};
 test("normalize a graph (one field one domain)", t => {
-  const someField = {
-    "@id": "http://schema.org/somefield",
-    "http://schema.org/domainIncludes": {
-      "@id": coffeeShop["@id"]
-    }
-  };
   const graph = [coffeeShop, someField];
   const result = {
     [coffeeShop["@id"]]: {
       ...coffeeShop,
-      domains: { [someField["@id"]]: someField }
+      domains: { [someField["@id"]]: someFieldId }
     },
     [someField["@id"]]: someField
   };
@@ -63,7 +67,7 @@ test("normalize a graph (one field one domain)", t => {
 });
 test("normalize a graph (one field many domains)", t => {
   const someField = {
-    "@id": "http://schema.org/somefield",
+    ...someFieldId,
     "http://schema.org/domainIncludes": [
       {
         "@id": coffeeShop["@id"]
@@ -77,11 +81,11 @@ test("normalize a graph (one field many domains)", t => {
   const result = {
     [coffeeShop["@id"]]: {
       ...coffeeShop,
-      domains: { [someField["@id"]]: someField }
+      domains: { [someField["@id"]]: someFieldId }
     },
     [restaurant["@id"]]: {
       ...restaurant,
-      domains: { [someField["@id"]]: someField }
+      domains: { [someField["@id"]]: someFieldId }
     },
     [someField["@id"]]: someField
   };
@@ -92,7 +96,7 @@ test("normalize a graph (one field many domains)", t => {
 });
 test("normalize a graph when domain not yet seen(one field many domains)", t => {
   const someField = {
-    "@id": "http://schema.org/somefield",
+    ...someFieldId,
     "http://schema.org/domainIncludes": [
       { "@id": "http://schema.org/CafeOrCoffeeShop" },
       { "@id": "http://schema.org/Restaurant" }
@@ -102,15 +106,26 @@ test("normalize a graph when domain not yet seen(one field many domains)", t => 
   const result = {
     [coffeeShop["@id"]]: {
       ...coffeeShop,
-      domains: { [someField["@id"]]: someField }
+      domains: { [someField["@id"]]: someFieldId }
     },
     [restaurant["@id"]]: {
-      domains: { [someField["@id"]]: someField }
+      domains: { [someField["@id"]]: someFieldId }
     },
     [someField["@id"]]: someField
   };
   const normalizedGraph = _normalizeGraph(graph);
   t.ok(typeof normalizedGraph === "object");
   t.deepEqual(normalizedGraph, result);
+  t.end();
+});
+
+test("remove the domainIncludes field from domains", t => {
+  const graph = [coffeeShop, someField];
+  const result = someFieldId;
+  const normalizedGraph = _normalizeGraph(graph);
+  t.deepEqual(
+    normalizedGraph[coffeeShop["@id"]].domains[someField["@id"]],
+    result
+  );
   t.end();
 });
