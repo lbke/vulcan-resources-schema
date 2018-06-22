@@ -10,8 +10,8 @@
 const fs = require("fs");
 const path = require("path");
 const mkdirp = require("mkdirp");
-const fp = require("lodash/fp");
 const R = require("ramda");
+const openJSON = require("../utils/openJSON");
 
 const SCHEMAS_PATH = path.resolve(
   __dirname,
@@ -20,14 +20,6 @@ const SCHEMAS_PATH = path.resolve(
 const OUTDIR = path.resolve(__dirname, "../../build/");
 
 const createOutdir = () => mkdirp.sync(OUTDIR);
-
-/**
- * Open the schemas file and parse it
- */
-const getSchemas = R.compose(
-  JSON.parse,
-  fs.readFileSync
-);
 
 /**
  * Domains can be objects or array, we want them as array
@@ -110,14 +102,13 @@ const run = (outdir = OUTDIR, schemasPath = SCHEMAS_PATH) => {
     // generateVulcanSchemas
     normalizeGraph,
     getGraph,
-    getSchemas
+    openJSON
   )(schemasPath);
 };
 
 module.exports = {
   SCHEMAS_PATH,
   _getGraph: getGraph,
-  _getSchemas: getSchemas,
   _normalizeGraph: normalizeGraph,
   _generateVulcanSchemas: generateVulcanSchemas,
   default: run

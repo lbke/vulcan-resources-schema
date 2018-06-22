@@ -1,9 +1,9 @@
 const test = require("tape");
+const openJSON = require("../src/utils/openJSON");
 const VulcanSchemasGenerator = require("../src/converters/shemaorg");
 const {
   _normalizeGraph,
   _generateVulcanSchemas,
-  _getSchemas,
   _getGraph,
   SCHEMAS_PATH
 } = VulcanSchemasGenerator;
@@ -14,14 +14,8 @@ test("define the correct functions", t => {
   t.end();
 });
 
-test("get the schemas", t => {
-  const schemas = _getSchemas(SCHEMAS_PATH);
-  t.ok(typeof schemas === "object");
-  t.ok(Object.keys(schemas).length > 0);
-  t.end();
-});
 test("get the graph", t => {
-  const graph = _getGraph(_getSchemas(SCHEMAS_PATH));
+  const graph = _getGraph(openJSON(SCHEMAS_PATH));
   t.ok(Array.isArray(graph));
   t.ok(graph.length > 0);
   t.end();
