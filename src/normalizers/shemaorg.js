@@ -24,15 +24,21 @@ const OUTDIR = path.resolve(__dirname, "../../build/");
 
 const createOutdir = () => mkdirp.sync(OUTDIR);
 
+// TODO: rewrite with Ramda and Functor?
+const asArray = value => {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+};
 /**
  * Domains can be objects or array, we want them as array
  * @param {*} schema
  */
 const getDomainsAsArray = schema => {
-  const rawDomains = schema["http://schema.org/domainIncludes"] || [];
-  return Array.isArray(rawDomains) ? rawDomains : [rawDomains];
+  return asArray(schema["http://schema.org/domainIncludes"]);
 };
-const getRanges = R.propOr("http://schema.org/rangeIncludes", []);
+const getRangesAsArray = schema => {
+  return asArray(schema["http://schema.org/rangeIncludes"]);
+};
 
 /**
  * Extract the graph from the schemas (other metadatas are not useful)
@@ -63,7 +69,9 @@ const cleanLinkedSchema = R.omit([
  * @param {*} schema A low leval field
  * @param {*} domains An array of domains the low level field is included in
  */
-const fillDomains = (graph, schema, domains) => {
+const fillDomains = (graph, schema) => {
+  // fill the related entities fields (domain) with the current schema
+  domains = getDomainsAsArray(schema);
   const cleanSchema = cleanLinkedSchema(schema);
   return domains.reduce(
     (res, domain) =>
@@ -72,6 +80,17 @@ const fillDomains = (graph, schema, domains) => {
         cleanSchema,
         res
       ),
+    graph
+  );
+};
+const fillPossibleTypes = (graph, schema) => {
+  const normalizedRanges = R.compose(
+    normalizeRanges,
+    getRangesAsArray
+  )(schema);
+  return R.set(
+    R.lensPath([schema["@id"], "possibleTypes"]),
+    normalizedRanges,
     graph
   );
 };
@@ -88,14 +107,8 @@ const normalizeGraph = graph => {
     const cleanSchema = cleanLinkedSchema(schema);
     res[key] = cleanSchema;
     // normalize the ranges
-    const normalizedRanges = R.compose(
-      normalizeRanges,
-      getRanges
-    )(normalizedGraph);
-    res = R.set(R.lensProp("possibleTypes"), normalizedRanges, res);
-    // fill the related entities fields (domain) with the current schema
-    domains = getDomainsAsArray(schema);
-    res = fillDomains(res, schema, domains);
+    res = fillPossibleTypes(res, schema);
+    res = fillDomains(res, schema);
     return res;
   }, {});
 };
