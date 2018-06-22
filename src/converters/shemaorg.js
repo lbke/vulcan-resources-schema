@@ -62,7 +62,7 @@ const fillDomains = (graph, schema, domains) => {
   return domains.reduce(
     (res, domain) =>
       R.set(
-        R.lensPath([domain["@id"], "domains", schema["@id"]]),
+        R.lensPath([domain["@id"], "fields", schema["@id"]]),
         cleanSchema,
         res
       ),
@@ -79,7 +79,8 @@ const normalizeGraph = graph => {
     const res = { ...normalizedGraph };
     const key = schema["@id"];
     // add the schema to the result if it does not exist
-    res[key] = schema;
+    const cleanSchema = cleanLinkedSchema(schema);
+    res[key] = cleanSchema;
     // fill the related entities fields (domain) with the current schema
     domains = getDomainsAsArray(schema);
     return fillDomains(res, schema, domains);
