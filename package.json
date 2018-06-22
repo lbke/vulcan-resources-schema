@@ -10,6 +10,9 @@
   "license": "ISC",
   "dependencies": {
     "jsonld": "^1.0.2",
-    "mkdirp": "^0.5.1"
+    "lodash": "^4.17.10",
+    "mkdirp": "^0.5.1",
+    "ramda": "^0.25.0",
+    "tcomb": "^3.2.27"
   }
 }
