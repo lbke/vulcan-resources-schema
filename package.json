@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tape ./test/*.js | tap-spec"
   },
   "author": "",
   "license": "ISC",
@@ -14,5 +14,9 @@
     "mkdirp": "^0.5.1",
     "ramda": "^0.25.0",
     "tcomb": "^3.2.27"
+  },
+  "devDependencies": {
+    "tap-spec": "^5.0.0",
+    "tape": "^4.9.1"
   }
 }
