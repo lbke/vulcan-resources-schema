@@ -17,10 +17,13 @@ const SCHEMAS_PATH = path.resolve(
   __dirname,
   "../../resources/all-layers.jsonld"
 );
-const OUTDIR = path.resolve(__dirname, "../dist/");
+const OUTDIR = path.resolve(__dirname, "../../build/");
 
-const generateOutdir = () => mkdirp.sync(OUTDIR);
+const createOutdir = () => mkdirp.sync(OUTDIR);
 
+/**
+ * Open the schemas file and parse it
+ */
 const getSchemas = R.compose(
   JSON.parse,
   fs.readFileSync
@@ -36,6 +39,10 @@ const getDomainsAsArray = schema => {
   return Array.isArray(rawDomains) ? rawDomains : [rawDomains];
 };
 
+/**
+ * Extract the graph from the schemas (other metadatas are not useful)
+ * @param {*} schemas
+ */
 const getGraph = schemas => schemas["@graph"][0]["@graph"];
 
 /**
@@ -51,6 +58,11 @@ const fillDomains = (graph, schema, domains) => {
     graph
   );
 };
+
+/**
+ * Normalize the graph (arrays become hashmaps)
+ * @param {*} graph
+ */
 const normalizeGraph = graph => {
   return graph.reduce((normalizedGraph, schema) => {
     const res = { ...normalizedGraph };
@@ -65,6 +77,12 @@ const normalizeGraph = graph => {
 
 const generateVulcanSchemas = normalizeGraph;
 
+/**
+ * Generate the file
+ * @param {*} outdir
+ * @param {*} filename
+ * @param {*} data
+ */
 const createFile = (outdir, filename, data) => {
   fs.writeFileSync(
     path.join(outdir, filename),
@@ -73,12 +91,14 @@ const createFile = (outdir, filename, data) => {
   );
 };
 
-const run = (schemasPath, outdir) => {
+const run = (outdir = OUTDIR, schemasPath = SCHEMAS_PATH) => {
+  createOutdir();
   R.compose(
-    generateOutdir,
-    getSchemas,
-    generateVulcanSchemas,
-    R.curry(createFile)(outdir)
+    R.curry(createFile)(outdir, "schemaorg-normalized.jsonld"),
+    // generateVulcanSchemas
+    normalizeGraph,
+    getGraph,
+    getSchemas
   )(schemasPath);
 };
 
