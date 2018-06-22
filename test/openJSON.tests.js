@@ -1,5 +1,5 @@
 const test = require("tape");
-const VulcanSchemasGenerator = require("../src/converters/shemaorg");
+const VulcanSchemasGenerator = require("../src/normalizers/shemaorg");
 const { SCHEMAS_PATH } = VulcanSchemasGenerator;
 
 const openJSON = require("../src/utils/openJSON");

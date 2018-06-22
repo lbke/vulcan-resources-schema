@@ -1,6 +1,6 @@
 const test = require("tape");
 const openJSON = require("../src/utils/openJSON");
-const VulcanSchemasGenerator = require("../src/converters/shemaorg");
+const VulcanSchemasGenerator = require("../src/normalizers/shemaorg");
 const {
   _normalizeGraph,
   _generateVulcanSchemas,
@@ -121,5 +121,49 @@ test("remove the domainIncludes field from domains", t => {
     normalizedGraph[coffeeShop["@id"]].fields[someField["@id"]],
     result
   );
+  t.end();
+});
+
+// rangeIncludes
+const rangeFieldId = { "@id": "someRangeField" };
+const someTypeId = { "@id": "someType" };
+test("normalize the rangeIncludes (one range)", t => {
+  const rangeField = {
+    ...rangeFieldId,
+    "http://schema.org/rangeIncludes": {
+      ...someTypeId
+    }
+  };
+  const graph = [rangeField];
+  const result = {
+    [rangeField["@id"]]: {
+      ...rangeFieldId,
+      rangeIncludes: {
+        [someTypeId["@id"]]: someTypeId
+      }
+    }
+  };
+  const normalizedGraph = _normalizeGraph(graph);
+  t.deepEqual(normalizedGraph, result);
+  t.end();
+});
+test("normalize the rangeIncludes (multiple ranges)", t => {
+  const someOtherTypeId = { "@id": "someOtherType" };
+  const rangeField = {
+    ...rangeFieldId,
+    "http://schema.org/rangeIncludes": [someTypeId, someOtherTypeId]
+  };
+  const graph = [rangeField];
+  const result = {
+    [rangeField["@id"]]: {
+      ...rangeFieldId,
+      rangeIncludes: {
+        [someTypeId["@id"]]: someTypeId,
+        [someOtherTypeId["@id"]]: someOtherTypeId
+      }
+    }
+  };
+  const normalizedGraph = _normalizeGraph(graph);
+  t.deepEqual(normalizedGraph, result);
   t.end();
 });
