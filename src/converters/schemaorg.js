@@ -47,6 +47,7 @@ const convertClass = R.pipe(
 const generateVulcanSchemas = R.pipe(
   // right now we handle only classes
   R.filter(isClass),
+  R.values,
   R.reduce(
     (res, classSchema) => ({
       ...res,
@@ -56,15 +57,18 @@ const generateVulcanSchemas = R.pipe(
   )
 );
 
-const run = R.pipe(
-  () => openJSON(SCHEMAS_PATH),
-  generateVulcanSchemas,
-  createOutdir,
-  writeJSON(undefined, "schemaorg-vulcanized.jsonld")
-);
+const run = () => {
+  createOutdir();
+  R.pipe(
+    () => openJSON(SCHEMAS_PATH),
+    generateVulcanSchemas,
+    writeJSON(undefined, "schemaorg-vulcanized.jsonld")
+  )();
+};
 
 module.exports = {
   _convertProperty: convertProperty,
   _convertClass: convertClass,
+  _generateVulcanSchemas: generateVulcanSchemas,
   default: run
 };
