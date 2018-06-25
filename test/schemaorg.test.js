@@ -116,7 +116,7 @@ describe("schemaorg.tests.js", () => {
     ).toMatchObject(result);
   });
 
-  // rangeIncludes
+  // rangeIncludes (= possibleTypes for the entity)
   const rangeFieldId = { "@id": "someRangeField" };
   const someTypeId = { "@id": "someType" };
   test("normalize the rangeIncludes (one range)", () => {
@@ -156,5 +156,14 @@ describe("schemaorg.tests.js", () => {
     };
     const normalizedGraph = _normalizeGraph(graph);
     expect(normalizedGraph).toMatchObject(result);
+  });
+  test("should not add the possibleTypes prop when there are no types", () => {
+    const someOtherTypeId = { "@id": "someOtherType" };
+    const noRangeField = {
+      ...rangeFieldId
+    };
+    const graph = [noRangeField];
+    const normalizedGraph = _normalizeGraph(graph);
+    expect(normalizedGraph[noRangeField["@id"]].possibleTypes).toBeUndefined();
   });
 });
