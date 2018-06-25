@@ -9,10 +9,10 @@ const OUTDIR = path.resolve(__dirname, "../../build/");
  * @param {*} filename
  * @param {*} data
  */
-module.exports = R.curry((outdir = OUTDIR, filename, data) => {
+module.exports = (outdir = OUTDIR, filename) => data => {
   fs.writeFileSync(
     path.join(outdir, filename),
     JSON.stringify(data, undefined, 2),
     { encoding: "utf8", flag: "w" }
   );
-});
+};
