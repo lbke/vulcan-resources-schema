@@ -86,11 +86,21 @@ const fillDomains = (graph, schema) => {
     graph
   );
 };
+
+const normalizeSchemaRanges = R.compose(
+  normalizeRanges,
+  getRangesAsArray
+);
+
+/**
+ * Fill the possible types
+ * @param {*} graph
+ * @param {*} schema
+ */
 const fillPossibleTypes = (graph, schema) => {
-  const normalizedRanges = R.compose(
-    normalizeRanges,
-    getRangesAsArray
-  )(schema);
+  const normalizedRanges = normalizeSchemaRanges(schema);
+  if (!normalizedRanges) return graph;
+  if (R.isEmpty(normalizedRanges)) return graph;
   return R.set(
     R.lensPath([schema["@id"], "possibleTypes"]),
     normalizedRanges,
