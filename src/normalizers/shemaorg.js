@@ -34,12 +34,17 @@ const asArray = value => {
  */
 const getDomainsAsArray = R.compose(
   asArray,
-  R.prop("http://schema.org/domainIncludes")
+  R.prop("domainIncludes")
 );
 
 const getRangesAsArray = R.compose(
   asArray,
-  R.prop("http://schema.org/rangeIncludes")
+  R.prop("rangeIncludes")
+);
+
+const extractId = R.pipe(
+  R.split("/"),
+  R.takeLast
 );
 
 /**
@@ -61,10 +66,7 @@ const normalizeRanges = R.reduce(
  * Avoid redundancy during the normalization process
  * @param {*} schema
  */
-const cleanLinkedSchema = R.omit([
-  "http://schema.org/domainIncludes",
-  "http://schema.org/rangeIncludes"
-]);
+const cleanLinkedSchema = R.omit(["domainIncludes", "rangeIncludes"]);
 /**
  * Fill the domains with the schema according to its dependency
  * @param {*} graph The whole graph
@@ -111,8 +113,16 @@ const fillPossibleTypes = (graph, schema) => {
  * Normalize the graph (arrays become hashmaps)
  * @param {*} graph
  */
-const normalizeGraph = graph => {
-  return graph.reduce((normalizedGraph, schema) => {
+const normalizeGraph = R.pipe(
+  R.pipe(
+    graph => JSON.stringify(graph),
+    str => {
+      // remove all urls and keep only the last part
+      return str.replace(/https?:\/\/schema.org\//g, "");
+    },
+    str => JSON.parse(str)
+  ),
+  R.reduce((normalizedGraph, schema) => {
     let res = { ...normalizedGraph };
     const key = schema["@id"];
     // add the schema to the result if it does not exist
@@ -122,8 +132,8 @@ const normalizeGraph = graph => {
     res = fillPossibleTypes(res, schema);
     res = fillDomains(res, schema);
     return res;
-  }, {});
-};
+  }, {})
+);
 
 const generateVulcanSchemas = normalizeGraph;
 
