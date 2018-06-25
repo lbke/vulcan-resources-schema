@@ -20,10 +20,10 @@ describe("schemaorg.tests.js", () => {
   });
 
   const coffeeShop = {
-    "@id": "http://schema.org/CafeOrCoffeeShop"
+    "@id": "CafeOrCoffeeShop"
   };
   const restaurant = {
-    "@id": "http://schema.org/Restaurant"
+    "@id": "Restaurant"
   };
   test("normalize a schema with no domains", () => {
     const graph = [coffeeShop];
@@ -34,11 +34,11 @@ describe("schemaorg.tests.js", () => {
   });
 
   const someFieldId = {
-    "@id": "http://schema.org/somefield"
+    "@id": "somefield"
   };
   const someField = {
     ...someFieldId,
-    "http://schema.org/domainIncludes": {
+    domainIncludes: {
       "@id": coffeeShop["@id"]
     }
   };
@@ -58,7 +58,7 @@ describe("schemaorg.tests.js", () => {
   test("normalize a graph (one field many domains)", () => {
     const someField = {
       ...someFieldId,
-      "http://schema.org/domainIncludes": [
+      domainIncludes: [
         {
           "@id": coffeeShop["@id"]
         },
@@ -86,10 +86,7 @@ describe("schemaorg.tests.js", () => {
   test("normalize a graph when domain not yet seen(one field many domains)", () => {
     const someField = {
       ...someFieldId,
-      "http://schema.org/domainIncludes": [
-        { "@id": "http://schema.org/CafeOrCoffeeShop" },
-        { "@id": "http://schema.org/Restaurant" }
-      ]
+      domainIncludes: [{ "@id": "CafeOrCoffeeShop" }, { "@id": "Restaurant" }]
     };
     const graph = [coffeeShop, someField];
     const result = {
@@ -122,7 +119,7 @@ describe("schemaorg.tests.js", () => {
   test("normalize the rangeIncludes (one range)", () => {
     const rangeField = {
       ...rangeFieldId,
-      "http://schema.org/rangeIncludes": {
+      rangeIncludes: {
         ...someTypeId
       }
     };
@@ -142,7 +139,7 @@ describe("schemaorg.tests.js", () => {
     const someOtherTypeId = { "@id": "someOtherType" };
     const rangeField = {
       ...rangeFieldId,
-      "http://schema.org/rangeIncludes": [someTypeId, someOtherTypeId]
+      rangeIncludes: [someTypeId, someOtherTypeId]
     };
     const graph = [rangeField];
     const result = {

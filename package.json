@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest ./test/**/*.js",
+    "build": "npm run normalize && npm run generate",
     "generate": "node ./src/scripts/generate-schemas",
     "normalize": "node ./src/scripts/normalize-schemas"
   },
