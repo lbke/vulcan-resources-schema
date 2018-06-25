@@ -22,7 +22,12 @@ const classifySchemas = R.reduce(
  * List the range includes for properties
  * @param {*} schemas
  */
-const listRangeIncludes = schemas => {};
+const listRangeIncludes = R.reduce((res, schema) => {
+    const rangeIncludes = schema['http://schema.org/rangeIncludes']
 
+    R.forEach((range) => {})
+}
+    
+}, {})
 const schemas = openJSON(SCHEMAS_PATH);
 const { classes, properties } = classifySchemas(schemas);

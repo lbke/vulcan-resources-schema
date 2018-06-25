@@ -1,5 +1,5 @@
-const openJSON = require("../src/utils/openJSON");
-const VulcanSchemasGenerator = require("../src/normalizers/shemaorg");
+const openJSON = require("../../src/utils/openJSON");
+const VulcanSchemasGenerator = require("../../src/normalizers/shemaorg");
 const {
   _normalizeGraph,
   _generateVulcanSchemas,

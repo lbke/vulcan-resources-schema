@@ -1,5 +1,2 @@
-const Schemaorg = require("../normalizers/shemaorg").default;
-const path = require("path");
-const SCHEMAS_PATH = path.resolve("../../resources/all-layers.jsonld");
-
+const Schemaorg = require("../converters/schemaorg").default;
 Schemaorg();

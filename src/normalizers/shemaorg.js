@@ -12,17 +12,16 @@
  */
 const fs = require("fs");
 const path = require("path");
-const mkdirp = require("mkdirp");
 const R = require("ramda");
 const openJSON = require("../utils/openJSON");
+const createOutdir = require("../utils/createOutdir");
+
+const OUTDIR = path.resolve(__dirname, "../../build/");
 
 const SCHEMAS_PATH = path.resolve(
   __dirname,
   "../../resources/all-layers.jsonld"
 );
-const OUTDIR = path.resolve(__dirname, "../../build/");
-
-const createOutdir = () => mkdirp.sync(OUTDIR);
 
 // TODO: rewrite with Ramda and Functor?
 const asArray = value => {
