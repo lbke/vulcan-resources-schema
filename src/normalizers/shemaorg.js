@@ -33,18 +33,21 @@ const asArray = value => {
  * Domains can be objects or array, we want them as array
  * @param {*} schema
  */
-const getDomainsAsArray = schema => {
-  return asArray(schema["http://schema.org/domainIncludes"]);
-};
-const getRangesAsArray = schema => {
-  return asArray(schema["http://schema.org/rangeIncludes"]);
-};
+const getDomainsAsArray = R.compose(
+  asArray,
+  R.prop("http://schema.org/domainIncludes")
+);
+
+const getRangesAsArray = R.compose(
+  asArray,
+  R.prop("http://schema.org/rangeIncludes")
+);
 
 /**
  * Extract the graph from the schemas (other metadatas are not useful)
  * @param {*} schemas
  */
-const getGraph = schemas => schemas["@graph"][0]["@graph"];
+const getGraph = R.path(["@graph", 0, "@graph"]);
 
 /**
  * Normalize the ranges
