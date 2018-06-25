@@ -34,6 +34,7 @@ const convertProperty = propertySchema => ({
 
 const convertClass = R.pipe(
   R.prop("fields"),
+  R.values, // reduce does not accept object contrary to map
   R.reduce(
     (res, field) => ({
       ...res,
@@ -63,5 +64,7 @@ const run = R.pipe(
 );
 
 module.exports = {
+  _convertProperty: convertProperty,
+  _convertClass: convertClass,
   default: run
 };
