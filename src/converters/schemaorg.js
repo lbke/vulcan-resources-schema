@@ -4,68 +4,64 @@
 
 // those basic properties are common to any Vulcan schema,
 // we add them systematically
-const DEFAULT_PROPERTIES = {
-  _id: {
-    type: String,
-    optional: true,
-    viewableBy: ["guests"]
-  },
-  createdAt: {
-    type: Date,
-    optional: true,
-    viewableBy: ["guests"],
-    onInsert: (document, currentUser) => {
-      return new Date();
-    }
-  },
-  userId: {
-    type: String,
-    optional: true,
-    viewableBy: ["guests"],
-    resolveAs: {
-      fieldName: "user",
-      type: "User",
-      resolver: (movie, args, context) => {
-        return context.Users.findOne(
-          { _id: movie.userId },
-          {
-            fields: context.Users.getViewableFields(
-              context.currentUser,
-              context.Users
-            )
-          }
-        );
-      },
-      addOriginalField: true
-    }
-  }
-};
+const R = require("ramda");
+const path = require("path");
+const DEFAULT_PROPS = require("./defaultProperties");
+const DEFAULT_FIELD_PROPS = require("./defaultFieldProperties");
+const openJSON = require("../utils/openJSON");
+const createOutdir = require("../utils/createOutdir");
+const writeJSON = require("../utils/writeJSON");
 
-const getFieldKey = field => field["rdfs:label"];
-const getPropertyType = schema => {
-  const schemaType = schema["http://schema.org/rangeIncludes"];
-  return String;
-};
-const convertProperty = schema => {
-  const vulcanSchema = {
-    type: getPropertyType(schema)
-  };
-};
+const SCHEMAS_PATH = path.resolve(
+  __dirname,
+  "../../build/schemaorg-normalized.jsonld"
+);
 
-const convertClass = schema => {
-  const vulcanSchema = { ...DEFAULT_PROPERTIES };
-  schema.fields.reduce((res, field) => {
-    const fieldKey = getFieldKey(key);
-    const convertedField = convertProperty(field);
-    return { ...res, [fieldKey]: convertedField };
-  });
-};
+const getPropertyLabel = R.prop("rdfs:label");
+const getPropertyType = R.always(String);
 
-const getSchemaLabel = schema => schema["rdfs:label"];
-const generateCollection = (label, vulcanSchema) => {
-  const vulcanCollection = {
-    typeName: label,
-    collectionName: label.toLower(),
-    schema: vulcanSchema
-  };
+const isClass = R.propEq("@type", "rdfs:Class");
+
+/**
+ * Create a vulcan property
+ * @param {*} schema
+ */
+const convertProperty = propertySchema => ({
+  ...DEFAULT_FIELD_PROPS,
+  type: getPropertyType(propertySchema),
+  label: getPropertyLabel(propertySchema)
+});
+
+const convertClass = R.pipe(
+  R.prop("fields"),
+  R.reduce(
+    (res, field) => ({
+      ...res,
+      [field["@id"]]: convertProperty(field)
+    }),
+    { ...DEFAULT_PROPS }
+  )
+);
+
+const generateVulcanSchemas = R.pipe(
+  // right now we handle only classes
+  R.filter(isClass),
+  R.reduce(
+    (res, classSchema) => ({
+      ...res,
+      [classSchema["@id"]]: convertClass(classSchema)
+    }),
+    {}
+  )
+);
+
+const run = R.pipe(
+  () => openJSON(SCHEMAS_PATH),
+  generateVulcanSchemas,
+  createOutdir,
+  writeJSON(undefined, "schemaorg-vulcanized.jsonld")
+);
+
+module.exports = {
+  default: run
 };

@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest ./test/*.js",
-    "generate": "node ./src/scripts/generate-schemas"
+    "test": "jest ./test/**/*.js",
+    "generate": "node ./src/scripts/generate-schemas",
+    "normalize": "node ./src/scripts/normalize-schemas"
   },
   "author": "",
   "license": "ISC",
