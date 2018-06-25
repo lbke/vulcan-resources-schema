@@ -1,22 +1,35 @@
 {
   "name": "vulcan-resources-schemas",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.0.1",
+  "description": "Generate vulcan schemas from trusted sources",
+  "author": "Lebrun Burel Knowledge Engineering (LBKE) <contact@lebrun-burel.com>",
+  "keywords": [
+    "schema",
+    "vulcan",
+    "meteor",
+    "jsonld"
+  ],
   "main": "index.js",
   "scripts": {
-    "test": "tape ./test/*.js | tap-spec"
+    "test": "jest ./test/**/*.js",
+    "build": "npm run normalize && npm run generate",
+    "generate": "node ./src/scripts/generate-schemas",
+    "normalize": "node ./src/scripts/normalize-schemas"
   },
-  "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lbke/vulcan-resources-schemas"
+  },
   "dependencies": {
     "jsonld": "^1.0.2",
     "lodash": "^4.17.10",
     "mkdirp": "^0.5.1",
+    "normalizr": "^3.2.4",
     "ramda": "^0.25.0",
     "tcomb": "^3.2.27"
   },
   "devDependencies": {
-    "tap-spec": "^5.0.0",
-    "tape": "^4.9.1"
+    "jest": "^23.1.0"
   }
 }
