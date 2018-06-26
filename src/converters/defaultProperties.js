@@ -1,7 +1,7 @@
 /**
  * Properties common to any Vulcan schema
  */
-import DEFAULT_FIELD_PROPS from "./defaultFieldProperties";
+const DEFAULT_FIELD_PROPS = require("./defaultFieldProperties");
 module.exports = {
   _id: {
     ...DEFAULT_FIELD_PROPS,
