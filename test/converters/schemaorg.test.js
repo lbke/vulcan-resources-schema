@@ -33,6 +33,10 @@ describe("converters/schemaorg", () => {
     const vulcanSchema = _convertProperty(propertySchema);
     expect(vulcanSchema).toMatchObject(expectedPropertySchema);
   });
+  test("select the correct type", () => {
+    const vulcanSchema = _convertProperty(propertySchema);
+    expect(vulcanSchema.type).toEqual(String);
+  });
   test("convert a class", () => {
     const vulcanSchema = _convertClass(classSchema);
     expect(vulcanSchema).toMatchObject(expectedClassSchema);
