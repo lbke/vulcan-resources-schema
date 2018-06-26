@@ -1,13 +1,15 @@
 /**
  * Properties common to any Vulcan schema
  */
+import DEFAULT_FIELD_PROPS from "./defaultFieldProperties";
 module.exports = {
   _id: {
+    ...DEFAULT_FIELD_PROPS,
     type: String,
-    optional: true,
-    viewableBy: ["guests"]
+    optional: true
   },
   createdAt: {
+    ...DEFAULT_FIELD_PROPS,
     type: Date,
     optional: true,
     viewableBy: ["guests"],
@@ -16,9 +18,9 @@ module.exports = {
     }
   },
   userId: {
+    ...DEFAULT_FIELD_PROPS,
     type: String,
     optional: true,
-    viewableBy: ["guests"],
     resolveAs: {
       fieldName: "user",
       type: "User",
