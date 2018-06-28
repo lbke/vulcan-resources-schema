@@ -13,6 +13,7 @@ const openJSON = require("../utils/openJSON");
 const createOutdir = require("../utils/createOutdir");
 const JSGenerator = require("../utils/JSGenerator");
 const prettify = require("../utils/prettify");
+const chalk = require("chalk");
 const { objField, es6ExportDefault, obj, toField, toFieldStr } = JSGenerator;
 
 const SCHEMAS_PATH = path.resolve(
@@ -55,24 +56,36 @@ const generateVulcanSchemas = R.pipe(
   // right now we handle only classes
   R.filter(isClass),
   R.values, // schemas is an object so we must convert
-  R.map(classSchema => toField(classSchema["@id"], convertClass(classSchema))),
-  obj,
-  es6ExportDefault
+  R.map(classSchema => ({
+    name: R.prop("@id")(classSchema),
+    schema: R.pipe(
+      R.tap(() => {
+        console.log("Generating schema ", classSchema["@id"]);
+      }),
+      convertClass,
+      es6ExportDefault,
+      prettify
+    )(classSchema)
+  }))
 );
+
+const exportSchema = ({ name, schema }) => {
+  const filePath = path.resolve(
+    __dirname,
+    "../../build/schemas",
+    `./${name}.schema.js`
+  );
+  fs.writeFileSync(filePath, schema, { encoding: "utf8", flag: "w" });
+};
+
+obj, es6ExportDefault;
 
 const run = () => {
   createOutdir();
   R.pipe(
     () => openJSON(SCHEMAS_PATH),
     generateVulcanSchemas,
-    prettify,
-    data => {
-      fs.writeFileSync(
-        path.resolve(__dirname, "../../build/", "./schemaorg-vulcanized.js"),
-        data,
-        { encoding: "utf8", flag: "w" }
-      );
-    }
+    R.map(exportSchema)
   )();
 };
 
