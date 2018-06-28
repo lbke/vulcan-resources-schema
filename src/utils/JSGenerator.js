@@ -18,7 +18,9 @@ const arrowFunc = R.curry(
 const commaSeparated = R.join(", ");
 
 // helper to create a field
-const toField = (key, value) => ({ key, value });
+const toField = R.curry((key, value) => ({ key, value }));
+// wrap the value between quotes before conversion
+const toFieldStr = R.curry((key, value) => ({ key, value: str(value) }));
 const objField = ({ key, value }) => prefix(dblQuote(key) + ":")(value);
 
 const obj = R.compose(
@@ -41,5 +43,8 @@ module.exports = {
   dblQuote,
   braces,
   brackets,
-  toField
+  toField,
+  toFieldStr,
+  commaSeparated,
+  arrowFunc
 };
