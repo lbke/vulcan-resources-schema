@@ -16,7 +16,7 @@ const fields = {
 };
 
 module.exports = [
-  toField("By", arr([str("guests")])),
+  toField("viewableBy", arr([str("guests")])),
   toField("editableBy", arr([str("guests")])),
   toField("insertableBy", arr([str("guests")]))
 ];

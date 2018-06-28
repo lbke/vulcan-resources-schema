@@ -12,6 +12,7 @@ const DEFAULT_FIELD_PROPS = require("./defaultFieldProperties");
 const openJSON = require("../utils/openJSON");
 const createOutdir = require("../utils/createOutdir");
 const JSGenerator = require("../utils/JSGenerator");
+const prettify = require("../utils/prettify");
 const { objField, es6ExportDefault, obj, toField, toFieldStr } = JSGenerator;
 
 const SCHEMAS_PATH = path.resolve(
@@ -24,7 +25,7 @@ const getPropertyLabel = R.pipe(
   toFieldStr("label")
 );
 const getPropertyType = R.pipe(
-  R.always(String),
+  R.always("String"),
   toField("type")
 );
 
@@ -42,9 +43,11 @@ const convertProperty = propertySchema =>
   ]);
 
 const convertClass = R.pipe(
-  R.prop("fields")
+  R.prop("fields"),
   R.values,
   R.map(field => toField(field["@id"], convertProperty(field))),
+  // add default props
+  R.flip(R.concat)(DEFAULT_PROPS),
   obj
 );
 
@@ -62,6 +65,7 @@ const run = () => {
   R.pipe(
     () => openJSON(SCHEMAS_PATH),
     generateVulcanSchemas,
+    prettify,
     data => {
       fs.writeFileSync(
         path.resolve(__dirname, "../../build/", "./schemaorg-vulcanized.js"),

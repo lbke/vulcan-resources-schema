@@ -50,40 +50,38 @@ module.exports = [
       ...DEFAULT_FIELD_PROPS,
       toField("type", "String"),
       toField("optional", "true")
-    ]),
-    toField(
-      "createdAt",
-      obj([
-        ...DEFAULT_FIELD_PROPS,
-        toField("type", "Date"),
-        toField("optional", "true"),
-        toField("viewableBy", `["guests"]`),
-        toField(
-          "onInsert",
-          arrowFunc(
-            commaSeparated(["document", "context"]),
-            "return new Date()"
-          )
-        )
-      ])
-    ),
-    toField(
-      "userId",
-      obj([
-        ...DEFAULT_FIELD_PROPS,
-        toField("type", "String"),
-        toField("optional", "true"),
+    ])
+  ),
+  toField(
+    "createdAt",
+    obj([
+      ...DEFAULT_FIELD_PROPS,
+      toField("type", "Date"),
+      toField("optional", "true"),
+      toField("viewableBy", `["guests"]`),
+      toField(
+        "onInsert",
+        arrowFunc(commaSeparated(["document", "context"]), "return new Date()")
+      )
+    ])
+  ),
+  toField(
+    "userId",
+    obj([
+      ...DEFAULT_FIELD_PROPS,
+      toField("type", "String"),
+      toField("optional", "true"),
 
-        toField(
-          "resolveAs",
-          obj([
-            toFieldStr("fieldName", "user"),
-            toFieldStr("type", "User"),
-            toField(
-              "resolver",
-              arrowFunc(
-                commaSeparated(["movie", "args", "context"]),
-                `
+      toField(
+        "resolveAs",
+        obj([
+          toFieldStr("fieldName", "user"),
+          toFieldStr("type", "User"),
+          toField(
+            "resolver",
+            arrowFunc(
+              commaSeparated(["movie", "args", "context"]),
+              `
         return context.Users.findOne(
           { _id: movie.userId },
           {
@@ -94,12 +92,11 @@ module.exports = [
           }
         );
        `
-              )
-            ),
-            toField("optional", "true")
-          ])
-        )
-      ])
-    )
+            )
+          ),
+          toField("optional", "true")
+        ])
+      )
+    ])
   )
 ];
