@@ -14,7 +14,15 @@ const createOutdir = require("../utils/createOutdir");
 const JSGenerator = require("../utils/JSGenerator");
 const prettify = require("../utils/prettify");
 const chalk = require("chalk");
-const { objField, es6ExportDefault, obj, toField, toFieldStr } = JSGenerator;
+const {
+  objField,
+  arr,
+  es6ExportDefault,
+  obj,
+  str,
+  toField,
+  toFieldStr
+} = JSGenerator;
 
 const SCHEMAS_PATH = path.resolve(
   __dirname,
@@ -69,24 +77,70 @@ const generateVulcanSchemas = R.pipe(
   }))
 );
 
+const schemaFileName = name => `${name}.schema.js`;
+// generate the index.js from the schemas
+const generateIndex = R.pipe(
+  R.map(
+    ({ name, schema }) =>
+      `export { default as ${name} } from "./${schemaFileName(name)}"`
+  ),
+  R.join("\n"),
+  prettify
+);
+
+// generate an array of the existing tables
+const generateNamesTable = R.pipe(
+  R.map(
+    R.pipe(
+      R.prop("name"),
+      str
+    )
+  ),
+  arr,
+  es6ExportDefault,
+  prettify
+);
+
 const exportSchema = ({ name, schema }) => {
   const filePath = path.resolve(
     __dirname,
     "../../build/schemas",
-    `./${name}.schema.js`
+    `./${schemaFileName(name)}`
   );
   fs.writeFileSync(filePath, schema, { encoding: "utf8", flag: "w" });
 };
+
+const exportIndex = R.pipe(
+  R.tap(() => console.log("Generating the index file")),
+  generateIndex,
+  index => {
+    const filePath = path.resolve(__dirname, "../../build/schemas", "index.js");
+    fs.writeFileSync(filePath, index, { encoding: "utf8", flag: "w" });
+  }
+);
+
+const exportNamesTable = R.pipe(
+  R.tap(() => console.log("Generating the tablesName file")),
+  generateNamesTable,
+  table => {
+    const filePath = path.resolve(__dirname, "../../build", "schemasNames.js");
+    fs.writeFileSync(filePath, table, { encoding: "utf8", flag: "w" });
+  }
+);
 
 obj, es6ExportDefault;
 
 const run = () => {
   createOutdir();
-  R.pipe(
+  const schemas = R.pipe(
     () => openJSON(SCHEMAS_PATH),
-    generateVulcanSchemas,
-    R.map(exportSchema)
+    generateVulcanSchemas
   )();
+  // generate the schemas
+  R.map(exportSchema)(schemas);
+  // generate the index
+  exportIndex(schemas);
+  exportNamesTable(schemas);
 };
 
 module.exports = {
