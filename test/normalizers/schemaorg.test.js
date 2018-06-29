@@ -174,7 +174,7 @@ describe("schemaorg.tests.js", () => {
         foo: 42
       },
       "rdfs:subClassOf": {
-        "@id": "superclass"
+        "@id": "superClass"
       }
     };
     const superClass = {

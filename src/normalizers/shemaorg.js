@@ -141,22 +141,30 @@ const normalizeGraph = R.reduce((normalizedGraph, schema) => {
 }, {});
 
 const handleSuperClasses = normalizedGraph =>
-  R.pipe(
-    R.filter(hasSuperClass),
-    R.values,
-    R.reduce((resultGraph, schema) => {
-      const superClasses = getSuperClassesAsArray(schema);
-      if (superClasses.length !== 1) {
-        console.log(
-          chalk.orange(
-            `Schema ${schema["@id"]} has ${superClasses.length} superClasses`
-          )
-        );
-      }
-      // TODO
-      return resultGraph;
-    }, normalizedGraph)
-  )(normalizedGraph);
+  R.map(schema => {
+    if (!hasSuperClass(schema)) return schema;
+    const superClasses = getSuperClassesAsArray(schema);
+    if (superClasses.length !== 1) {
+      console.log(
+        chalk.orange(
+          `Schema ${schema["@id"]} has ${superClasses.length} superClasses`
+        )
+      );
+    }
+    const superClass = normalizedGraph[superClasses[0]["@id"]];
+    const superClassFields = R.prop("fields")(superClass);
+    const fields = R.merge(superClassFields, schema.fields);
+    return {
+      ...schema,
+      fields: { ...superClassFields, ...schema.fields }
+      // get the parent superClass so we can iterate recursively if needed
+      // rdfs:subClassOf : hasSuperClass(superClass) ? R.prop('rdfs:subClassOf')(superClass) : undefined
+    };
+
+    R.set("fields", R.merge(R.prop("fields", schema), superClassFields))(
+      schema
+    );
+  })(normalizedGraph);
 /**
  * Normalize the graph (arrays become hashmaps)
  * @param {*} graph
