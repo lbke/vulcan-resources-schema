@@ -146,9 +146,10 @@ const handleSuperClasses = normalizedGraph =>
     const superClasses = getSuperClassesAsArray(schema);
     if (superClasses.length !== 1) {
       console.log(
-        chalk.orange(
+        chalk.yellow(
           `Schema ${schema["@id"]} has ${superClasses.length} superClasses`
-        )
+        ),
+        superClasses
       );
     }
     const superClass = normalizedGraph[superClasses[0]["@id"]];

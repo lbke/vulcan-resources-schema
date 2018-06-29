@@ -191,7 +191,10 @@ describe("schemaorg.tests.js", () => {
       expect(res["subClass"]).toBeDefined();
       expect(res["subClass"].fields).toEqual(expectedRes);
     });
-    test.skip("should handle multiple level of inheritance", () => {
+    test.skip("handle multiple level of inheritance recursively", () => {
+      expect(false).toBe(true);
+    });
+    test.skip("handle multiple superClass", () => {
       expect(false).toBe(true);
     });
   });
