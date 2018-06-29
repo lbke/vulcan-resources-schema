@@ -22,6 +22,7 @@
     "url": "git+https://github.com/lbke/vulcan-resources-schemas"
   },
   "dependencies": {
+    "chalk": "^2.4.1",
     "jsonld": "^1.0.2",
     "lodash": "^4.17.10",
     "mkdirp": "^0.5.1",

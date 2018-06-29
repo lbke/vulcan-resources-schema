@@ -13,7 +13,16 @@ const openJSON = require("../utils/openJSON");
 const createOutdir = require("../utils/createOutdir");
 const JSGenerator = require("../utils/JSGenerator");
 const prettify = require("../utils/prettify");
-const { objField, es6ExportDefault, obj, toField, toFieldStr } = JSGenerator;
+const chalk = require("chalk");
+const {
+  objField,
+  arr,
+  es6ExportDefault,
+  obj,
+  str,
+  toField,
+  toFieldStr
+} = JSGenerator;
 
 const SCHEMAS_PATH = path.resolve(
   __dirname,
@@ -55,25 +64,83 @@ const generateVulcanSchemas = R.pipe(
   // right now we handle only classes
   R.filter(isClass),
   R.values, // schemas is an object so we must convert
-  R.map(classSchema => toField(classSchema["@id"], convertClass(classSchema))),
-  obj,
-  es6ExportDefault
+  R.map(classSchema => ({
+    name: R.prop("@id")(classSchema),
+    schema: R.pipe(
+      R.tap(() => {
+        console.log("Generating schema ", classSchema["@id"]);
+      }),
+      convertClass,
+      es6ExportDefault,
+      prettify
+    )(classSchema)
+  }))
 );
+
+const schemaFileName = name => `${name}.schema.js`;
+// generate the index.js from the schemas
+const generateIndex = R.pipe(
+  R.map(
+    ({ name, schema }) =>
+      `export { default as ${name} } from "./${schemaFileName(name)}"`
+  ),
+  R.join("\n"),
+  prettify
+);
+
+// generate an array of the existing tables
+const generateNamesTable = R.pipe(
+  R.map(
+    R.pipe(
+      R.prop("name"),
+      str
+    )
+  ),
+  arr,
+  es6ExportDefault,
+  prettify
+);
+
+const exportSchema = ({ name, schema }) => {
+  const filePath = path.resolve(
+    __dirname,
+    "../../build/schemas",
+    `./${schemaFileName(name)}`
+  );
+  fs.writeFileSync(filePath, schema, { encoding: "utf8", flag: "w" });
+};
+
+const exportIndex = R.pipe(
+  R.tap(() => console.log("Generating the index file")),
+  generateIndex,
+  index => {
+    const filePath = path.resolve(__dirname, "../../build/schemas", "index.js");
+    fs.writeFileSync(filePath, index, { encoding: "utf8", flag: "w" });
+  }
+);
+
+const exportNamesTable = R.pipe(
+  R.tap(() => console.log("Generating the tablesName file")),
+  generateNamesTable,
+  table => {
+    const filePath = path.resolve(__dirname, "../../build", "schemasNames.js");
+    fs.writeFileSync(filePath, table, { encoding: "utf8", flag: "w" });
+  }
+);
+
+obj, es6ExportDefault;
 
 const run = () => {
   createOutdir();
-  R.pipe(
+  const schemas = R.pipe(
     () => openJSON(SCHEMAS_PATH),
-    generateVulcanSchemas,
-    prettify,
-    data => {
-      fs.writeFileSync(
-        path.resolve(__dirname, "../../build/", "./schemaorg-vulcanized.js"),
-        data,
-        { encoding: "utf8", flag: "w" }
-      );
-    }
+    generateVulcanSchemas
   )();
+  // generate the schemas
+  R.map(exportSchema)(schemas);
+  // generate the index
+  exportIndex(schemas);
+  exportNamesTable(schemas);
 };
 
 module.exports = {
