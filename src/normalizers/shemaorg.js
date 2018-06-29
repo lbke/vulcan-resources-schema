@@ -154,14 +154,17 @@ const handleSuperClasses = normalizedGraph =>
     }
     const superClass = normalizedGraph[superClasses[0]["@id"]];
     const superClassFields = R.prop("fields")(superClass);
+    const superClassSuper = hasSuperClass(superClass)
+      ? R.prop("rdfs:subClassOf")(superClass)
+      : undefined;
+
     const fields = R.merge(superClassFields, schema.fields);
     return {
       ...schema,
-      fields: { ...superClassFields, ...schema.fields }
+      fields: { ...superClassFields, ...schema.fields },
       // get the parent superClass so we can iterate recursively if needed
-      // rdfs:subClassOf : hasSuperClass(superClass) ? R.prop('rdfs:subClassOf')(superClass) : undefined
+      "rdfs:subClassOf": superClassSuper
     };
-
     R.set("fields", R.merge(R.prop("fields", schema), superClassFields))(
       schema
     );

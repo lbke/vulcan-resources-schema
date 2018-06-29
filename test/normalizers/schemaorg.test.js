@@ -191,6 +191,28 @@ describe("schemaorg.tests.js", () => {
       expect(res["subClass"]).toBeDefined();
       expect(res["subClass"].fields).toEqual(expectedRes);
     });
+    test("store the parent superClass to allow recursive calls", () => {
+      const newSubClass = {
+        ...subClass,
+        "rdfs:subClassOf": {
+          "@id": "intermediateClass"
+        }
+      };
+      const intermediateClass = {
+        "@id": "intermediateClass",
+        fields: {
+          intermediate: 42
+        },
+        "rdfs:subClassOf": {
+          "@id": "superClass"
+        }
+      };
+      const graph = { subClass: newSubClass, intermediateClass, superClass };
+      const res = _handleSuperClasses(graph);
+      expect(res["subClass"]["rdfs:subClassOf"]).toEqual({
+        "@id": "superClass"
+      });
+    });
     test.skip("handle multiple level of inheritance recursively", () => {
       expect(false).toBe(true);
     });
