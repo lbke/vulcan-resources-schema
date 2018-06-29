@@ -143,8 +143,9 @@ const normalizeGraph = R.reduce((normalizedGraph, schema) => {
 const handleSuperClasses = normalizedGraph =>
   R.pipe(
     R.filter(hasSuperClass),
+    R.values,
     R.reduce((resultGraph, schema) => {
-      const superClasses = schema.superClasses;
+      const superClasses = getSuperClassesAsArray(schema);
       if (superClasses.length !== 1) {
         console.log(
           chalk.orange(
@@ -154,13 +155,13 @@ const handleSuperClasses = normalizedGraph =>
       }
       // TODO
       return resultGraph;
-    }, normalizeGraph)
-  );
+    }, normalizedGraph)
+  )(normalizedGraph);
 /**
  * Normalize the graph (arrays become hashmaps)
  * @param {*} graph
  */
-const normalizeGraph = R.pipe(
+const restructureGraph = R.pipe(
   scrapHttp,
   normalizeGraph
 );
@@ -186,8 +187,8 @@ const run = (outdir = OUTDIR, schemasPath = SCHEMAS_PATH) => {
   R.pipe(
     openJSON,
     getGraph,
-    normalizeGraph,
-    handleSuperlasses,
+    restructureGraph,
+    handleSuperClasses,
     R.curry(createFile)(outdir, "schemaorg-normalized.jsonld")
   )(schemasPath);
 };
@@ -196,6 +197,6 @@ module.exports = {
   SCHEMAS_PATH,
   _getGraph: getGraph,
   _normalizeGraph: normalizeGraph,
-  _generateVulcanSchemas: generateVulcanSchemas,
+  _handleSuperClasses: handleSuperClasses,
   default: run
 };
