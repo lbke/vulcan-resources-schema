@@ -15,6 +15,7 @@ const path = require("path");
 const R = require("ramda");
 const openJSON = require("../utils/openJSON");
 const createOutdir = require("../utils/createOutdir");
+const chalk = require("chalk");
 
 const OUTDIR = path.resolve(__dirname, "../../build/");
 
@@ -36,11 +37,15 @@ const getDomainsAsArray = R.compose(
   asArray,
   R.prop("domainIncludes")
 );
-
 const getRangesAsArray = R.compose(
   asArray,
   R.prop("rangeIncludes")
 );
+const getSuperClassesAsArray = R.pipe(
+  R.prop("rdfs:subClassOf"),
+  asArray
+);
+const hasSuperClass = R.has("rdfs:subClassOf");
 
 const extractId = R.pipe(
   R.split("/"),
@@ -110,29 +115,54 @@ const fillPossibleTypes = (graph, schema) => {
 };
 
 /**
+ * Fill the fields with the super class field
+ */
+const fillSuperClass = (graph, schema) => {};
+
+const scrapHttp = R.pipe(
+  graph => JSON.stringify(graph),
+  str => {
+    // remove all urls and keep only the last part
+    return str.replace(/https?:\/\/schema.org\//g, "");
+  },
+  str => JSON.parse(str)
+);
+
+const normalizeGraph = R.reduce((normalizedGraph, schema) => {
+  let res = { ...normalizedGraph };
+  const key = schema["@id"];
+  // add the schema to the result if it does not exist
+  const cleanSchema = cleanLinkedSchema(schema);
+  res[key] = cleanSchema;
+  // normalize the ranges
+  res = fillPossibleTypes(res, schema);
+  res = fillDomains(res, schema);
+  return res;
+}, {});
+
+const handleSuperClasses = normalizedGraph =>
+  R.pipe(
+    R.filter(hasSuperClass),
+    R.reduce((resultGraph, schema) => {
+      const superClasses = schema.superClasses;
+      if (superClasses.length !== 1) {
+        console.log(
+          chalk.orange(
+            `Schema ${schema["@id"]} has ${superClasses.length} superClasses`
+          )
+        );
+      }
+      // TODO
+      return resultGraph;
+    }, normalizeGraph)
+  );
+/**
  * Normalize the graph (arrays become hashmaps)
  * @param {*} graph
  */
 const normalizeGraph = R.pipe(
-  R.pipe(
-    graph => JSON.stringify(graph),
-    str => {
-      // remove all urls and keep only the last part
-      return str.replace(/https?:\/\/schema.org\//g, "");
-    },
-    str => JSON.parse(str)
-  ),
-  R.reduce((normalizedGraph, schema) => {
-    let res = { ...normalizedGraph };
-    const key = schema["@id"];
-    // add the schema to the result if it does not exist
-    const cleanSchema = cleanLinkedSchema(schema);
-    res[key] = cleanSchema;
-    // normalize the ranges
-    res = fillPossibleTypes(res, schema);
-    res = fillDomains(res, schema);
-    return res;
-  }, {})
+  scrapHttp,
+  normalizeGraph
 );
 
 const generateVulcanSchemas = normalizeGraph;
@@ -153,12 +183,12 @@ const createFile = (outdir, filename, data) => {
 
 const run = (outdir = OUTDIR, schemasPath = SCHEMAS_PATH) => {
   createOutdir();
-  R.compose(
-    R.curry(createFile)(outdir, "schemaorg-normalized.jsonld"),
-    // generateVulcanSchemas
-    normalizeGraph,
+  R.pipe(
+    openJSON,
     getGraph,
-    openJSON
+    normalizeGraph,
+    handleSuperlasses,
+    R.curry(createFile)(outdir, "schemaorg-normalized.jsonld")
   )(schemasPath);
 };
 
