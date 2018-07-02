@@ -1,5 +1,6 @@
+const R = require("ramda");
 const openJSON = require("../../src/utils/openJSON");
-const VulcanSchemasGenerator = require("../../src/normalizers/shemaorg");
+const VulcanSchemasGenerator = require("../../src/normalizers/schemaorg/index");
 const {
   _normalizeGraph,
   _handleSuperClasses,
@@ -191,13 +192,8 @@ describe("schemaorg.tests.js", () => {
       expect(res["subClass"]).toBeDefined();
       expect(res["subClass"].fields).toEqual(expectedRes);
     });
-    test("store the parent superClass to allow recursive calls", () => {
-      const newSubClass = {
-        ...subClass,
-        "rdfs:subClassOf": {
-          "@id": "intermediateClass"
-        }
-      };
+
+    describe("recursive inheritance and multiple classes", () => {
       const intermediateClass = {
         "@id": "intermediateClass",
         fields: {
@@ -207,17 +203,102 @@ describe("schemaorg.tests.js", () => {
           "@id": "superClass"
         }
       };
-      const graph = { subClass: newSubClass, intermediateClass, superClass };
-      const res = _handleSuperClasses(graph);
-      expect(res["subClass"]["rdfs:subClassOf"]).toEqual({
-        "@id": "superClass"
+      const intermediateClassMultiple = {
+        "@id": "intermediateClassMultiple",
+        fields: {
+          interMultiple: "smth"
+        },
+        "rdfs:subClassOf": [
+          {
+            "@id": "superClass2"
+          },
+          { "@id": "superClass3" }
+        ]
+      };
+      test("store the parent superClass to allow recursive calls", () => {
+        const newSubClass = {
+          ...subClass,
+          "rdfs:subClassOf": {
+            "@id": "intermediateClass"
+          }
+        };
+        const graph = { subClass: newSubClass, intermediateClass, superClass };
+        const res = _handleSuperClasses(graph);
+        expect(res["subClass"]["rdfs:subClassOf"]).toEqual([
+          {
+            "@id": "superClass"
+          }
+        ]);
       });
-    });
-    test.skip("handle multiple level of inheritance recursively", () => {
-      expect(false).toBe(true);
-    });
-    test.skip("handle multiple superClass", () => {
-      expect(false).toBe(true);
+      test("handle multiple level of inheritance recursively", () => {
+        const newSubClass = {
+          ...subClass,
+          "rdfs:subClassOf": {
+            "@id": "intermediateClass"
+          }
+        };
+        const graph = { subClass: newSubClass, intermediateClass, superClass };
+        const res = _handleSuperClasses(graph);
+        const fields = res["subClass"].fields;
+        expect(fields).toEqual({
+          foo: 42,
+          intermediate: 42,
+          bar: 42
+        });
+      });
+      test("store the super class own super classes to allow recursive calls - multiple", () => {
+        const newSubClass = {
+          ...subClass,
+          "rdfs:subClassOf": [
+            {
+              "@id": "intermediateClass"
+            },
+            { "@id": "intermediateClassMultiple" }
+          ]
+        };
+        const graph = {
+          subClass: newSubClass,
+          intermediateClass,
+          intermediateClassMultiple,
+          superClass,
+          superClass2: {},
+          superClass3: {}
+        };
+        const res = _handleSuperClasses(graph);
+        const newSubClassOf = res["subClass"]["rdfs:subClassOf"];
+        expect(newSubClassOf).toBeInstanceOf(Array);
+        expect(newSubClassOf.map(R.prop("@id"))).toEqual([
+          "superClass",
+          "superClass2",
+          "superClass3"
+        ]);
+      });
+      test("handle multiple superClass", () => {
+        const newSubClass = {
+          ...subClass,
+          "rdfs:subClassOf": [
+            {
+              "@id": "intermediateClass"
+            },
+            { "@id": "intermediateClassMultiple" }
+          ]
+        };
+        const graph = {
+          subClass: newSubClass,
+          intermediateClass,
+          intermediateClassMultiple,
+          superClass,
+          superClass2: {},
+          superClass3: {}
+        };
+        const res = _handleSuperClasses(graph);
+        const fields = res["subClass"]["fields"];
+        expect(fields).toEqual({
+          foo: 42,
+          intermediate: 42,
+          interMultiple: "smth"
+        });
+      });
     });
   });
 });
