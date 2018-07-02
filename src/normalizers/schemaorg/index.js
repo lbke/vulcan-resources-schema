@@ -13,50 +13,18 @@
 const fs = require("fs");
 const path = require("path");
 const R = require("ramda");
-const openJSON = require("../utils/openJSON");
-const createOutdir = require("../utils/createOutdir");
-const chalk = require("chalk");
+const openJSON = require("../../utils/openJSON");
+const createOutdir = require("../../utils/createOutdir");
 
-const OUTDIR = path.resolve(__dirname, "../../build/");
+const OUTDIR = path.resolve(__dirname, "../../../build/");
 
 const SCHEMAS_PATH = path.resolve(
   __dirname,
-  "../../resources/all-layers.jsonld"
+  "../../../resources/all-layers.jsonld"
 );
 
-// TODO: rewrite with Ramda and Functor?
-const asArray = value => {
-  if (!value) return [];
-  return Array.isArray(value) ? value : [value];
-};
-/**
- * Domains can be objects or array, we want them as array
- * @param {*} schema
- */
-const getDomainsAsArray = R.compose(
-  asArray,
-  R.prop("domainIncludes")
-);
-const getRangesAsArray = R.compose(
-  asArray,
-  R.prop("rangeIncludes")
-);
-const getSuperClassesAsArray = R.pipe(
-  R.prop("rdfs:subClassOf"),
-  asArray
-);
-const hasSuperClass = R.has("rdfs:subClassOf");
-
-const extractId = R.pipe(
-  R.split("/"),
-  R.takeLast
-);
-
-/**
- * Extract the graph from the schemas (other metadatas are not useful)
- * @param {*} schemas
- */
-const getGraph = R.path(["@graph", 0, "@graph"]);
+const handleSuperClasses = require("./handleSuperClasses").default;
+const { getDomainsAsArray, getRangesAsArray, getGraph } = require("./common");
 
 /**
  * Normalize the ranges
@@ -114,11 +82,6 @@ const fillPossibleTypes = (graph, schema) => {
   );
 };
 
-/**
- * Fill the fields with the super class field
- */
-const fillSuperClass = (graph, schema) => {};
-
 const scrapHttp = R.pipe(
   graph => JSON.stringify(graph),
   str => {
@@ -140,27 +103,11 @@ const normalizeGraph = R.reduce((normalizedGraph, schema) => {
   return res;
 }, {});
 
-const handleSuperClasses = normalizedGraph =>
-  R.pipe(
-    R.filter(hasSuperClass),
-    R.reduce((resultGraph, schema) => {
-      const superClasses = schema.superClasses;
-      if (superClasses.length !== 1) {
-        console.log(
-          chalk.orange(
-            `Schema ${schema["@id"]} has ${superClasses.length} superClasses`
-          )
-        );
-      }
-      // TODO
-      return resultGraph;
-    }, normalizeGraph)
-  );
 /**
  * Normalize the graph (arrays become hashmaps)
  * @param {*} graph
  */
-const normalizeGraph = R.pipe(
+const restructureGraph = R.pipe(
   scrapHttp,
   normalizeGraph
 );
@@ -186,8 +133,8 @@ const run = (outdir = OUTDIR, schemasPath = SCHEMAS_PATH) => {
   R.pipe(
     openJSON,
     getGraph,
-    normalizeGraph,
-    handleSuperlasses,
+    restructureGraph,
+    handleSuperClasses,
     R.curry(createFile)(outdir, "schemaorg-normalized.jsonld")
   )(schemasPath);
 };
@@ -196,6 +143,5 @@ module.exports = {
   SCHEMAS_PATH,
   _getGraph: getGraph,
   _normalizeGraph: normalizeGraph,
-  _generateVulcanSchemas: generateVulcanSchemas,
   default: run
 };
