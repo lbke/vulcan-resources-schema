@@ -13,45 +13,18 @@
 const fs = require("fs");
 const path = require("path");
 const R = require("ramda");
-const openJSON = require("../utils/openJSON");
-const createOutdir = require("../utils/createOutdir");
+const openJSON = require("../../utils/openJSON");
+const createOutdir = require("../../utils/createOutdir");
 
-const OUTDIR = path.resolve(__dirname, "../../build/");
+const OUTDIR = path.resolve(__dirname, "../../../build/");
 
 const SCHEMAS_PATH = path.resolve(
   __dirname,
-  "../../resources/all-layers.jsonld"
+  "../../../resources/all-layers.jsonld"
 );
 
-// TODO: rewrite with Ramda and Functor?
-const asArray = value => {
-  if (!value) return [];
-  return Array.isArray(value) ? value : [value];
-};
-/**
- * Domains can be objects or array, we want them as array
- * @param {*} schema
- */
-const getDomainsAsArray = R.compose(
-  asArray,
-  R.prop("domainIncludes")
-);
-
-const getRangesAsArray = R.compose(
-  asArray,
-  R.prop("rangeIncludes")
-);
-
-const extractId = R.pipe(
-  R.split("/"),
-  R.takeLast
-);
-
-/**
- * Extract the graph from the schemas (other metadatas are not useful)
- * @param {*} schemas
- */
-const getGraph = R.path(["@graph", 0, "@graph"]);
+const handleSuperClasses = require("./handleSuperClasses").default;
+const { getDomainsAsArray, getRangesAsArray, getGraph } = require("./common");
 
 /**
  * Normalize the ranges
@@ -109,30 +82,34 @@ const fillPossibleTypes = (graph, schema) => {
   );
 };
 
+const scrapHttp = R.pipe(
+  graph => JSON.stringify(graph),
+  str => {
+    // remove all urls and keep only the last part
+    return str.replace(/https?:\/\/schema.org\//g, "");
+  },
+  str => JSON.parse(str)
+);
+
+const normalizeGraph = R.reduce((normalizedGraph, schema) => {
+  let res = { ...normalizedGraph };
+  const key = schema["@id"];
+  // add the schema to the result if it does not exist
+  const cleanSchema = cleanLinkedSchema(schema);
+  res[key] = cleanSchema;
+  // normalize the ranges
+  res = fillPossibleTypes(res, schema);
+  res = fillDomains(res, schema);
+  return res;
+}, {});
+
 /**
  * Normalize the graph (arrays become hashmaps)
  * @param {*} graph
  */
-const normalizeGraph = R.pipe(
-  R.pipe(
-    graph => JSON.stringify(graph),
-    str => {
-      // remove all urls and keep only the last part
-      return str.replace(/https?:\/\/schema.org\//g, "");
-    },
-    str => JSON.parse(str)
-  ),
-  R.reduce((normalizedGraph, schema) => {
-    let res = { ...normalizedGraph };
-    const key = schema["@id"];
-    // add the schema to the result if it does not exist
-    const cleanSchema = cleanLinkedSchema(schema);
-    res[key] = cleanSchema;
-    // normalize the ranges
-    res = fillPossibleTypes(res, schema);
-    res = fillDomains(res, schema);
-    return res;
-  }, {})
+const restructureGraph = R.pipe(
+  scrapHttp,
+  normalizeGraph
 );
 
 const generateVulcanSchemas = normalizeGraph;
@@ -153,12 +130,12 @@ const createFile = (outdir, filename, data) => {
 
 const run = (outdir = OUTDIR, schemasPath = SCHEMAS_PATH) => {
   createOutdir();
-  R.compose(
-    R.curry(createFile)(outdir, "schemaorg-normalized.jsonld"),
-    // generateVulcanSchemas
-    normalizeGraph,
+  R.pipe(
+    openJSON,
     getGraph,
-    openJSON
+    restructureGraph,
+    handleSuperClasses,
+    R.curry(createFile)(outdir, "schemaorg-normalized.jsonld")
   )(schemasPath);
 };
 
@@ -166,6 +143,5 @@ module.exports = {
   SCHEMAS_PATH,
   _getGraph: getGraph,
   _normalizeGraph: normalizeGraph,
-  _generateVulcanSchemas: generateVulcanSchemas,
   default: run
 };
