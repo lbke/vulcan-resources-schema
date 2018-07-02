@@ -16,14 +16,14 @@ const R = require("ramda");
 const openJSON = require("../../utils/openJSON");
 const createOutdir = require("../../utils/createOutdir");
 
-const OUTDIR = path.resolve(__dirname, "../../build/");
+const OUTDIR = path.resolve(__dirname, "../../../build/");
 
 const SCHEMAS_PATH = path.resolve(
   __dirname,
-  "../../resources/all-layers.jsonld"
+  "../../../resources/all-layers.jsonld"
 );
 
-const handleSuperClasses = require("./handleSuperClasses");
+const handleSuperClasses = require("./handleSuperClasses").default;
 const { getDomainsAsArray, getRangesAsArray, getGraph } = require("./common");
 
 /**
@@ -143,6 +143,5 @@ module.exports = {
   SCHEMAS_PATH,
   _getGraph: getGraph,
   _normalizeGraph: normalizeGraph,
-  _handleSuperClasses: handleSuperClasses,
   default: run
 };

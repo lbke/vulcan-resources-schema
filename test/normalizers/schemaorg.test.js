@@ -1,19 +1,37 @@
 const R = require("ramda");
 const openJSON = require("../../src/utils/openJSON");
-const VulcanSchemasGenerator = require("../../src/normalizers/schemaorg/index");
+const { hasSuperClass } = require("../../src/normalizers/schemaorg/common");
 const {
-  _normalizeGraph,
-  _handleSuperClasses,
-  _getGraph,
-  SCHEMAS_PATH
-} = VulcanSchemasGenerator;
+  _mergeSuperClasses,
+  default: handleSuperClasses
+} = require("../../src/normalizers/schemaorg/handleSuperClasses");
+const VulcanSchemasGenerator = require("../../src/normalizers/schemaorg/index");
+const { _normalizeGraph, _getGraph, SCHEMAS_PATH } = VulcanSchemasGenerator;
 
 describe("schemaorg.tests.js", () => {
-  describe("utils", () => {
+  describe("common", () => {
     test("get the graph", () => {
       const graph = _getGraph(openJSON(SCHEMAS_PATH));
       expect(graph).toBeInstanceOf(Array);
       expect(graph.length).toBeGreaterThan(0);
+    });
+    describe("hasSuperClass", () => {
+      test("object", () => {
+        const schema = { "rdfs:subClassOf": { "@id": "foobar" } };
+        expect(hasSuperClass(schema)).toEqual(true);
+      });
+      test("array", () => {
+        const schema = { "rdfs:subClassOf": [{ "@id": "foobar" }] };
+        expect(hasSuperClass(schema)).toEqual(true);
+      });
+      test("undefined", () => {
+        const schema = {};
+        expect(hasSuperClass(schema)).toEqual(false);
+      });
+      test("empty array", () => {
+        const schema = { "rdfs:subClassOf": [] };
+        expect(hasSuperClass(schema)).toEqual(false);
+      });
     });
   });
 
@@ -168,7 +186,7 @@ describe("schemaorg.tests.js", () => {
     });
   });
 
-  describe("superClasses", () => {
+  describe("handleSuperClasses", () => {
     const subClass = {
       "@id": "subClass",
       fields: {
@@ -186,7 +204,7 @@ describe("schemaorg.tests.js", () => {
     };
     test("fill the subclass fields with the superclass fields", () => {
       const graph = { subClass, superClass };
-      const res = _handleSuperClasses(graph);
+      const res = handleSuperClasses(graph);
       const expectedRes = { foo: 42, bar: 34 };
       expect(res).toBeDefined();
       expect(res["subClass"]).toBeDefined();
@@ -223,7 +241,7 @@ describe("schemaorg.tests.js", () => {
           }
         };
         const graph = { subClass: newSubClass, intermediateClass, superClass };
-        const res = _handleSuperClasses(graph);
+        const res = _mergeSuperClasses(graph).graph;
         expect(res["subClass"]["rdfs:subClassOf"]).toEqual([
           {
             "@id": "superClass"
@@ -238,12 +256,12 @@ describe("schemaorg.tests.js", () => {
           }
         };
         const graph = { subClass: newSubClass, intermediateClass, superClass };
-        const res = _handleSuperClasses(graph);
+        const res = handleSuperClasses(graph);
         const fields = res["subClass"].fields;
         expect(fields).toEqual({
           foo: 42,
           intermediate: 42,
-          bar: 42
+          bar: 34
         });
       });
       test("store the super class own super classes to allow recursive calls - multiple", () => {
@@ -264,7 +282,7 @@ describe("schemaorg.tests.js", () => {
           superClass2: {},
           superClass3: {}
         };
-        const res = _handleSuperClasses(graph);
+        const res = _mergeSuperClasses(graph).graph;
         const newSubClassOf = res["subClass"]["rdfs:subClassOf"];
         expect(newSubClassOf).toBeInstanceOf(Array);
         expect(newSubClassOf.map(R.prop("@id"))).toEqual([
@@ -291,10 +309,11 @@ describe("schemaorg.tests.js", () => {
           superClass2: {},
           superClass3: {}
         };
-        const res = _handleSuperClasses(graph);
+        const res = handleSuperClasses(graph);
         const fields = res["subClass"]["fields"];
         expect(fields).toEqual({
           foo: 42,
+          bar: 34,
           intermediate: 42,
           interMultiple: "smth"
         });
