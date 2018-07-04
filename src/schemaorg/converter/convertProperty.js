@@ -1,4 +1,7 @@
 const R = require("ramda");
+const JSGenerator = require("../../utils/JSGenerator");
+const DEFAULT_FIELD_PROPS = require("../../config/defaultFieldProperties");
+const { obj, toField, toFieldStr } = JSGenerator;
 
 const asArray = require("../../utils/asArray");
 

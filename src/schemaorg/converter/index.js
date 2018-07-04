@@ -8,12 +8,11 @@ const R = require("ramda");
 const fs = require("fs");
 const path = require("path");
 const chalk = require("chalk");
-const DEFAULT_PROPS = require("../defaultProperties");
-const DEFAULT_FIELD_PROPS = require("../defaultFieldProperties");
+const DEFAULT_PROPS = require("../../config/defaultProperties");
 const openJSON = require("../../utils/openJSON");
 const createOutdir = require("../../utils/createOutdir");
-const JSGenerator = require("../../utils/JSGenerator");
 const prettify = require("../../utils/prettify");
+const JSGenerator = require("../../utils/JSGenerator");
 const {
   objField,
   arr,
@@ -23,6 +22,7 @@ const {
   toField,
   toFieldStr
 } = JSGenerator;
+const convertProperty = require("./convertProperty");
 
 const SCHEMAS_PATH = path.resolve(
   __dirname,
@@ -107,8 +107,6 @@ const exportNamesTable = R.pipe(
     fs.writeFileSync(filePath, table, { encoding: "utf8", flag: "w" });
   }
 );
-
-obj, es6ExportDefault;
 
 const run = () => {
   createOutdir();

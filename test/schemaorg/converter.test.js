@@ -1,4 +1,4 @@
-const SchemaOrg = require("../../src/converters/schemaorg");
+const SchemaOrg = require("../../src/schemaorg/converter");
 const { _convertProperty, _convertClass, _generateVulcanSchemas } = SchemaOrg;
 describe("converters/schemaorg", () => {
   const propertySchema = {

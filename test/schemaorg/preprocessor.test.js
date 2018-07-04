@@ -1,14 +1,14 @@
 const R = require("ramda");
 const openJSON = require("../../src/utils/openJSON");
-const { hasSuperClass } = require("../../src/normalizers/schemaorg/common");
+const { hasSuperClass } = require("../../src/schemaorg/preprocessor/common");
 const {
   _mergeSuperClasses,
   default: handleSuperClasses
-} = require("../../src/normalizers/schemaorg/handleSuperClasses");
+} = require("../../src/schemaorg/preprocessor/handleSuperClasses");
 const {
   default: handleTypes
-} = require("../../src/normalizers/schemaorg/handleTypes");
-const VulcanSchemasGenerator = require("../../src/normalizers/schemaorg/index");
+} = require("../../src/schemaorg/preprocessor/handleTypes");
+const VulcanSchemasGenerator = require("../../src/schemaorg/preprocessor/index");
 const { _normalizeGraph, _getGraph, SCHEMAS_PATH } = VulcanSchemasGenerator;
 
 describe("schemaorg.tests.js", () => {
