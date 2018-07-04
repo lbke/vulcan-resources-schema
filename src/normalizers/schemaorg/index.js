@@ -25,7 +25,6 @@ const SCHEMAS_PATH = path.resolve(
 
 const { getDomainsAsArray, getRangesAsArray, getGraph } = require("./common");
 const handleSuperClasses = require("./handleSuperClasses").default;
-const handleTypes = require("./handleTypes").default;
 
 /**
  * Remove the domainIncludes part of the schema
@@ -63,6 +62,26 @@ const scrapHttp = R.pipe(
   str => JSON.parse(str)
 );
 
+// convert an array of types into a normalized object
+const normalizeRanges = R.reduce(
+  (res, range) => ({ ...res, [range["@id"]]: range }),
+  {}
+);
+const normalizeSchemaRanges = R.compose(
+  normalizeRanges,
+  getRangesAsArray
+);
+const fillPossibleTypes = (graph, schema) => {
+  const normalizedRanges = normalizeSchemaRanges(schema);
+  if (!normalizedRanges) return graph;
+  if (R.isEmpty(normalizedRanges)) return graph;
+  return R.set(
+    R.lensPath([schema["@id"], "possibleTypes"]),
+    normalizedRanges,
+    graph
+  );
+};
+
 const normalizeGraph = R.reduce((normalizedGraph, schema) => {
   let res = { ...normalizedGraph };
   const key = schema["@id"];
@@ -71,6 +90,7 @@ const normalizeGraph = R.reduce((normalizedGraph, schema) => {
   res[key] = cleanSchema;
   // normalize the ranges
   res = fillDomains(res, schema);
+  res = fillPossibleTypes(res, schema);
   return res;
 }, {});
 

@@ -9,7 +9,7 @@ const getDomainsAsArray = R.compose(
   asArray,
   R.prop("domainIncludes")
 );
-const getTypesAsArray = R.compose(
+const getRangesAsArray = R.compose(
   asArray,
   R.prop("rangeIncludes")
 );
@@ -20,8 +20,12 @@ const getSuperClassesAsArray = R.pipe(
 const hasSuperClass = schema =>
   R.has("rdfs:subClassOf")(schema) && !!getSuperClassesAsArray(schema).length;
 
+const getTypesAsArray = R.compose(
+  asArray,
+  R.prop("possibleTypes")
+);
 const hasTypes = schema =>
-  R.has("rangeIncludes")(schema) && !!getRangesAsArray(schema).length;
+  R.has("possibleTypes")(schema) && !!getTypesAsArray(schema).length;
 
 /* R.both(
   R.has("rdfs:subClassOf"),
@@ -41,8 +45,9 @@ const getGraph = R.path(["@graph", 0, "@graph"]);
 module.exports = {
   asArray,
   getDomainsAsArray,
-  getTypesAsArray,
+  getRangesAsArray,
   getSuperClassesAsArray,
+  getTypesAsArray,
   hasSuperClass,
   hasTypes,
   extractId,

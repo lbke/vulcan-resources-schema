@@ -11,6 +11,10 @@ const getPropertyType = (graph, schema) => {
   const possibleTypes = getPossibleTypesAsArray(schema);
   // TODO: should handle multiple types
   const possibleType = possibleTypes[0];
+  // if the type is a class => String with id
+  // if the type is a Property =>
+  //    if it is a basic property, use the correct type and control
+  //    else iterate to get the underlying basic property
 };
 
 const getPropertyLabel = R.pipe(

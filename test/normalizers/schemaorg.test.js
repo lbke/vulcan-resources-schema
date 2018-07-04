@@ -5,6 +5,9 @@ const {
   _mergeSuperClasses,
   default: handleSuperClasses
 } = require("../../src/normalizers/schemaorg/handleSuperClasses");
+const {
+  default: handleTypes
+} = require("../../src/normalizers/schemaorg/handleTypes");
 const VulcanSchemasGenerator = require("../../src/normalizers/schemaorg/index");
 const { _normalizeGraph, _getGraph, SCHEMAS_PATH } = VulcanSchemasGenerator;
 
@@ -183,6 +186,47 @@ describe("schemaorg.tests.js", () => {
       expect(
         normalizedGraph[noRangeField["@id"]].possibleTypes
       ).toBeUndefined();
+    });
+  });
+
+  describe("handleTypes", () => {
+    const property = {
+      "@id": "withType",
+      "@type": "rdfs:Property"
+    };
+    const propertyOneClass = {
+      ...property,
+      possibleTypes: {
+        SomeClass: { "@id": "someClass" }
+      }
+    };
+    const propertyOneSubproperty = {
+      ...property,
+      possibleTypes: {
+        someProperty: { "@id": "someProperty" }
+      }
+    };
+    const someProperty = {
+      "@id": "someProperty",
+      "@type": "rdfs:Property",
+      foo: "bar"
+    };
+    const someClass = {
+      "@id": "someClass",
+      "@type": "rdfs:Class",
+      smth: 42
+    };
+    test("should load a property definition", () => {
+      const graph = { propertyOneSubproperty, someProperty };
+      const res = handleTypes(graph);
+      const expectedRes = someProperty;
+      expect(res.possibleTypes[someProperty["@id"]]).toEqual(someProperty);
+    });
+    test("should add the type to class fields", () => {
+      const graph = { propertyOneClass, someClass };
+      const res = handleTypes(graph);
+      const expectedRes = R.omit(["smth"], someClass);
+      expect(res.possibleTypes[someClass["@id"]]).toEqual(someClass);
     });
   });
 
