@@ -241,7 +241,7 @@ describe("schemaorg.tests.js", () => {
           }
         };
         const graph = { subClass: newSubClass, intermediateClass, superClass };
-        const res = _mergeSuperClasses(graph).graph;
+        const res = _mergeSuperClasses(graph).res;
         expect(res["subClass"]["rdfs:subClassOf"]).toEqual([
           {
             "@id": "superClass"
@@ -282,7 +282,7 @@ describe("schemaorg.tests.js", () => {
           superClass2: {},
           superClass3: {}
         };
-        const res = _mergeSuperClasses(graph).graph;
+        const res = _mergeSuperClasses(graph).res;
         const newSubClassOf = res["subClass"]["rdfs:subClassOf"];
         expect(newSubClassOf).toBeInstanceOf(Array);
         expect(newSubClassOf.map(R.prop("@id"))).toEqual([
