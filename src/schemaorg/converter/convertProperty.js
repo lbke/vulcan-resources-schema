@@ -2,18 +2,23 @@ const R = require("ramda");
 const JSGenerator = require("../../utils/JSGenerator");
 const DEFAULT_FIELD_PROPS = require("../../config/defaultFieldProperties");
 const { obj, toField, toFieldStr } = JSGenerator;
+const { isClass, getTypesAsArray } = require("../common");
 
-const asArray = require("../../utils/asArray");
-
-const getPossibleTypesAsArray = R.pipe(
-  R.prop("possibleTypes"),
-  asArray
-);
-
-const getPropertyType = (graph, schema) => {
-  const possibleTypes = getPossibleTypesAsArray(schema);
+const handleType = (graph, schema) => {
+  const possibleTypes = getTypesAsArray(schema);
   // TODO: should handle multiple types
   const possibleType = possibleTypes[0];
+  if (isClass) {
+    return [
+      toField("type", "String")
+      // TODO: resolveAs
+      //toField('resolveAs')
+    ];
+  } else {
+    // TODO: write a switch
+    console.log("Property type is:", possibleType);
+    return [toField("type", "String")];
+  }
   // if the type is a class => String with id
   // if the type is a Property =>
   //    if it is a basic property, use the correct type and control
@@ -36,8 +41,11 @@ R.pipe(
 const convertProperty = propertySchema =>
   obj([
     ...DEFAULT_FIELD_PROPS,
-    getPropertyType(propertySchema),
+    ...handleType(propertySchema),
     getPropertyLabel(propertySchema)
   ]);
 
-module.exports = convertProperty;
+module.exports = {
+  _handleType: handleType,
+  default: convertProperty
+};

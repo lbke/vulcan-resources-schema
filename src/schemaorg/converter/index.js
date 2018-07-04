@@ -22,14 +22,13 @@ const {
   toField,
   toFieldStr
 } = JSGenerator;
-const convertProperty = require("./convertProperty");
+const convertProperty = require("./convertProperty").default;
+const { isClass } = require("../common");
 
 const SCHEMAS_PATH = path.resolve(
   __dirname,
   "../../build/schemaorg-normalized.jsonld"
 );
-
-const isClass = R.propEq("@type", "rdfs:Class");
 
 const convertClass = R.pipe(
   R.prop("fields"),

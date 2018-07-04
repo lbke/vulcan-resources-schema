@@ -1,5 +1,8 @@
 const SchemaOrg = require("../../src/schemaorg/converter");
 const { _convertProperty, _convertClass, _generateVulcanSchemas } = SchemaOrg;
+const {
+  _handleType
+} = require("../../src/schemaorg/converter/convertProperty");
 describe("converters/schemaorg", () => {
   const propertySchema = {
     "@id": "some-property",
@@ -28,28 +31,58 @@ describe("converters/schemaorg", () => {
   const expectedClassSchema = {
     "some-property": expectedPropertySchema
   };
+  describe("convertProperty", () => {
+    const property = {
+      "@id": "withType",
+      "@type": "rdfs:Property"
+    };
+    const propertyOneClass = {
+      ...property,
+      possibleTypes: {
+        someClass: { "@id": "SomeClass", "@type": "rdfs:Class" }
+      }
+    };
+    const propertyOneSubproperty = {
+      ...property,
+      possibleTypes: {
+        someProperty: { "@id": "someProperty", "@type": "rdfs:Property" }
+      }
+    };
+    const someProperty = {
+      "@id": "someProperty",
+      "@type": "rdfs:Property",
+      foo: "bar"
+    };
 
-  test("convert a property", () => {
-    const vulcanSchema = _convertProperty(propertySchema);
-    expect(vulcanSchema).toMatchObject(expectedPropertySchema);
+    test("type is String when possibleTypes is one class", () => {
+      const res = _handleType(propertySchema);
+      expect(res[0]).toEqual({ key: "type", value: "String" });
+    });
+    test.skip("set resolveAs when possibleTypes is one class", () => {
+      const res = _handleType(propertySchema);
+      //expect(res[1]).toEqual({ key: "resolveAs", value: "..." });
+    });
+    test("type is String when possibleTypes is one property and is a String", () => {
+      const res = _handleType(propertySchema);
+      expect(res[0]).toEqual({ key: "type", value: "String" });
+    });
   });
-  test("select the correct type", () => {
-    const vulcanSchema = _convertProperty(propertySchema);
-    expect(vulcanSchema.type).toEqual(String);
-  });
-  test("convert a class", () => {
-    const vulcanSchema = _convertClass(classSchema);
-    expect(vulcanSchema).toMatchObject(expectedClassSchema);
-  });
-  test("convert a map of classes (one class)", () => {
-    const vulcanSchemas = _generateVulcanSchemas(schemas);
-    expect(vulcanSchemas).toBeInstanceOf(Object);
-    expect(vulcanSchemas["some-class"]).toMatchObject(expectedClassSchema);
-  });
-  test("convert a map of classes (many classes)", () => {
-    const vulcanSchemas = _generateVulcanSchemas(richSchemas);
-    expect(vulcanSchemas).toBeInstanceOf(Object);
-    expect(vulcanSchemas["foo"]).toMatchObject(expectedClassSchema);
-    expect(vulcanSchemas["bar"]).toMatchObject(expectedClassSchema);
+
+  describe("convertClass", () => {
+    test("convert a class", () => {
+      const vulcanSchema = _convertClass(classSchema);
+      expect(vulcanSchema).toMatchObject(expectedClassSchema);
+    });
+    test("convert a map of classes (one class)", () => {
+      const vulcanSchemas = _generateVulcanSchemas(schemas);
+      expect(vulcanSchemas).toBeInstanceOf(Object);
+      expect(vulcanSchemas["some-class"]).toMatchObject(expectedClassSchema);
+    });
+    test("convert a map of classes (many classes)", () => {
+      const vulcanSchemas = _generateVulcanSchemas(richSchemas);
+      expect(vulcanSchemas).toBeInstanceOf(Object);
+      expect(vulcanSchemas["foo"]).toMatchObject(expectedClassSchema);
+      expect(vulcanSchemas["bar"]).toMatchObject(expectedClassSchema);
+    });
   });
 });
