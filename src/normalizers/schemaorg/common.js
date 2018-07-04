@@ -1,9 +1,6 @@
 const R = require("ramda");
+const asArray = require("../../utils/asArray");
 
-const asArray = value => {
-  if (!value) return [];
-  return Array.isArray(value) ? value : [value];
-};
 const notEmpty = R.pipe(
   R.prop("length"),
   R.gt(0)

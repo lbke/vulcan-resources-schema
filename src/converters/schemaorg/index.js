@@ -7,13 +7,13 @@
 const R = require("ramda");
 const fs = require("fs");
 const path = require("path");
-const DEFAULT_PROPS = require("./defaultProperties");
-const DEFAULT_FIELD_PROPS = require("./defaultFieldProperties");
-const openJSON = require("../utils/openJSON");
-const createOutdir = require("../utils/createOutdir");
-const JSGenerator = require("../utils/JSGenerator");
-const prettify = require("../utils/prettify");
 const chalk = require("chalk");
+const DEFAULT_PROPS = require("../defaultProperties");
+const DEFAULT_FIELD_PROPS = require("../defaultFieldProperties");
+const openJSON = require("../../utils/openJSON");
+const createOutdir = require("../../utils/createOutdir");
+const JSGenerator = require("../../utils/JSGenerator");
+const prettify = require("../../utils/prettify");
 const {
   objField,
   arr,
@@ -29,27 +29,7 @@ const SCHEMAS_PATH = path.resolve(
   "../../build/schemaorg-normalized.jsonld"
 );
 
-const getPropertyLabel = R.pipe(
-  R.prop("rdfs:label"),
-  toFieldStr("label")
-);
-const getPropertyType = R.pipe(
-  R.always("String"),
-  toField("type")
-);
-
 const isClass = R.propEq("@type", "rdfs:Class");
-
-/**
- * Create a vulcan property
- * @param {*} schema
- */
-const convertProperty = propertySchema =>
-  obj([
-    ...DEFAULT_FIELD_PROPS,
-    getPropertyType(propertySchema),
-    getPropertyLabel(propertySchema)
-  ]);
 
 const convertClass = R.pipe(
   R.prop("fields"),
