@@ -1,6 +1,7 @@
 const R = require("ramda");
 const chalk = require("chalk");
 const { hasSuperClass, getSuperClassesAsArray } = require("./common");
+const until = require("../../utils/until");
 const warnMultipleSuperClasses = (schema, superClasses) => {
   if (superClasses.length !== 1) {
     console.log(
@@ -44,24 +45,15 @@ const mergeSuperClasses = normalizedGraph => {
     existsSuperClass++; // flag
     return mergeSchemaSuperClasses(normalizedGraph, schema);
   })(normalizedGraph);
-  return { existsSuperClass, graph };
+  return { flag: !!existsSuperClass, res: graph };
 };
 
 /**
  * Recursively merge superclasses untile we are done
  * TODO: a bit suboptimal, we should only iterate on schemas that still have some superclasses
  */
-const handleSuperClasses = normalizedGraph => {
-  let existsSuperClass = true;
-  let graph = normalizedGraph;
-  let res;
-  while (existsSuperClass) {
-    res = mergeSuperClasses(graph);
-    existsSuperClass = res.existsSuperClass;
-    graph = res.graph;
-  }
-  return graph;
-};
+const handleSuperClasses = normalizedGraph =>
+  until(mergeSuperClasses, normalizedGraph);
 
 module.exports = {
   default: handleSuperClasses,

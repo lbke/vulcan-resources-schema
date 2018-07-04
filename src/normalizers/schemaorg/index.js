@@ -23,17 +23,10 @@ const SCHEMAS_PATH = path.resolve(
   "../../../resources/all-layers.jsonld"
 );
 
-const handleSuperClasses = require("./handleSuperClasses").default;
 const { getDomainsAsArray, getRangesAsArray, getGraph } = require("./common");
+const handleSuperClasses = require("./handleSuperClasses").default;
+const handleTypes = require("./handleTypes").default;
 
-/**
- * Normalize the ranges
- * @param {*} ranges
- */
-const normalizeRanges = R.reduce(
-  (res, range) => ({ ...res, [range["@id"]]: range }),
-  {}
-);
 /**
  * Remove the domainIncludes part of the schema
  * Avoid redundancy during the normalization process
@@ -61,27 +54,6 @@ const fillDomains = (graph, schema) => {
   );
 };
 
-const normalizeSchemaRanges = R.compose(
-  normalizeRanges,
-  getRangesAsArray
-);
-
-/**
- * Fill the possible types
- * @param {*} graph
- * @param {*} schema
- */
-const fillPossibleTypes = (graph, schema) => {
-  const normalizedRanges = normalizeSchemaRanges(schema);
-  if (!normalizedRanges) return graph;
-  if (R.isEmpty(normalizedRanges)) return graph;
-  return R.set(
-    R.lensPath([schema["@id"], "possibleTypes"]),
-    normalizedRanges,
-    graph
-  );
-};
-
 const scrapHttp = R.pipe(
   graph => JSON.stringify(graph),
   str => {
@@ -98,7 +70,6 @@ const normalizeGraph = R.reduce((normalizedGraph, schema) => {
   const cleanSchema = cleanLinkedSchema(schema);
   res[key] = cleanSchema;
   // normalize the ranges
-  res = fillPossibleTypes(res, schema);
   res = fillDomains(res, schema);
   return res;
 }, {});
@@ -135,6 +106,7 @@ const run = (outdir = OUTDIR, schemasPath = SCHEMAS_PATH) => {
     getGraph,
     restructureGraph,
     handleSuperClasses,
+    handleTypes,
     R.curry(createFile)(outdir, "schemaorg-normalized.jsonld")
   )(schemasPath);
 };
