@@ -197,7 +197,7 @@ describe("schemaorg.tests.js", () => {
     const propertyOneClass = {
       ...property,
       possibleTypes: {
-        SomeClass: { "@id": "someClass" }
+        someClass: { "@id": "someClass" }
       }
     };
     const propertyOneSubproperty = {
@@ -216,17 +216,20 @@ describe("schemaorg.tests.js", () => {
       "@type": "rdfs:Class",
       smth: 42
     };
-    test("should load a property definition", () => {
+    test("load a property definition", () => {
       const graph = { propertyOneSubproperty, someProperty };
       const res = handleTypes(graph);
-      const expectedRes = someProperty;
-      expect(res.possibleTypes[someProperty["@id"]]).toEqual(someProperty);
+      expect(
+        res.propertyOneSubproperty.possibleTypes[someProperty["@id"]]
+      ).toEqual(someProperty);
     });
-    test("should add the type to class fields", () => {
+    test("add the type to class fields", () => {
       const graph = { propertyOneClass, someClass };
       const res = handleTypes(graph);
       const expectedRes = R.omit(["smth"], someClass);
-      expect(res.possibleTypes[someClass["@id"]]).toEqual(someClass);
+      expect(res.propertyOneClass.possibleTypes[someClass["@id"]]).toEqual(
+        expectedRes
+      );
     });
   });
 
