@@ -1,6 +1,7 @@
 const JSGenerator = require("../../src/utils/JSGenerator");
 const {
   brackets,
+  str,
   braces,
   objField,
   obj,
@@ -21,5 +22,8 @@ describe("JSGenerator", () => {
     expect(obj([toField("foo", 42), toField("bar", "String")])).toEqual(
       '{"foo": 42, "bar": String}'
     );
+  });
+  test("escape strings", () => {
+    expect(str('Hello <a href="link">world</a>')).toEqual('"Hello world"');
   });
 });

@@ -1,4 +1,4 @@
-const VulcanSchemasGenerator = require("../src/normalizers/schemaorg/index");
+const VulcanSchemasGenerator = require("../src/schemaorg/preprocessor/index");
 const { SCHEMAS_PATH } = VulcanSchemasGenerator;
 
 const openJSON = require("../src/utils/openJSON");

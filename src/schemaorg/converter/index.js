@@ -7,53 +7,49 @@
 const R = require("ramda");
 const fs = require("fs");
 const path = require("path");
-const chalk = require("chalk");
-const DEFAULT_PROPS = require("../defaultProperties");
-const DEFAULT_FIELD_PROPS = require("../defaultFieldProperties");
 const openJSON = require("../../utils/openJSON");
 const createOutdir = require("../../utils/createOutdir");
-const JSGenerator = require("../../utils/JSGenerator");
 const prettify = require("../../utils/prettify");
-const {
-  objField,
-  arr,
-  es6ExportDefault,
-  obj,
-  str,
-  toField,
-  toFieldStr
-} = JSGenerator;
+const JSGenerator = require("../../utils/JSGenerator");
+const { arr, es6ExportDefault, es6Export, declareConst, str } = JSGenerator;
+const convertProperty = require("./convertProperty").default;
+const convertClass = require("./convertClass").default;
+const { isClass } = require("../common");
 
-const SCHEMAS_PATH = path.resolve(
-  __dirname,
-  "../../build/schemaorg-normalized.jsonld"
+const BUILD_PATH = path.resolve(__dirname, "../../../build");
+const SCHEMAS_PATH = path.join(BUILD_PATH, "./schemaorg-normalized.jsonld");
+
+const getId = R.prop("@id");
+
+const exportSchema = R.curry((schemaName, schema) =>
+  R.compose(
+    es6Export,
+    declareConst(schemaName)
+  )(schema)
 );
 
-const isClass = R.propEq("@type", "rdfs:Class");
+const addDefaultExport = schemaName =>
+  R.flip(R.concat)(`\nexport default ${schemaName}`); // add a default export
 
-const convertClass = R.pipe(
-  R.prop("fields"),
-  R.values,
-  R.map(field => toField(field["@id"], convertProperty(field))),
-  // add default props
-  R.flip(R.concat)(DEFAULT_PROPS),
-  obj
-);
+const generateVulcanSchema = normalizedSchema => {
+  const schemaName = getId(normalizedSchema);
+  return R.pipe(
+    R.tap(() => {
+      console.log("Generating schema ", schemaName);
+    }),
+    convertClass, // actually generate the schema
+    exportSchema(schemaName), // export const NAME = {...},
+    addDefaultExport(schemaName), // add an export default NAME
+    prettify
+  )(normalizedSchema);
+};
 
 const generateVulcanSchemas = R.pipe(
-  // right now we handle only classes
-  R.filter(isClass),
-  R.values, // schemas is an object so we must convert
+  R.filter(isClass), // right now we export only classes
+  R.values, // schemas is an object so we must convert it to an array
   R.map(classSchema => ({
-    name: R.prop("@id")(classSchema),
-    schema: R.pipe(
-      R.tap(() => {
-        console.log("Generating schema ", classSchema["@id"]);
-      }),
-      convertClass,
-      es6ExportDefault,
-      prettify
-    )(classSchema)
+    name: getId(classSchema),
+    schema: generateVulcanSchema(classSchema)
   }))
 );
 
@@ -81,34 +77,32 @@ const generateNamesTable = R.pipe(
   prettify
 );
 
-const exportSchema = ({ name, schema }) => {
+const writeSchemaFile = ({ name, schema }) => {
   const filePath = path.resolve(
-    __dirname,
-    "../../build/schemas",
+    BUILD_PATH,
+    "./schemas/",
     `./${schemaFileName(name)}`
   );
   fs.writeFileSync(filePath, schema, { encoding: "utf8", flag: "w" });
 };
 
-const exportIndex = R.pipe(
+const writeIndexFile = R.pipe(
   R.tap(() => console.log("Generating the index file")),
   generateIndex,
   index => {
-    const filePath = path.resolve(__dirname, "../../build/schemas", "index.js");
+    const filePath = path.join(BUILD_PATH, "./schemas/", "./index.js");
     fs.writeFileSync(filePath, index, { encoding: "utf8", flag: "w" });
   }
 );
 
-const exportNamesTable = R.pipe(
+const writeNamesTableFile = R.pipe(
   R.tap(() => console.log("Generating the tablesName file")),
   generateNamesTable,
   table => {
-    const filePath = path.resolve(__dirname, "../../build", "schemasNames.js");
+    const filePath = path.join(BUILD_PATH, "./schemasNames.js");
     fs.writeFileSync(filePath, table, { encoding: "utf8", flag: "w" });
   }
 );
-
-obj, es6ExportDefault;
 
 const run = () => {
   createOutdir();
@@ -117,10 +111,10 @@ const run = () => {
     generateVulcanSchemas
   )();
   // generate the schemas
-  R.map(exportSchema)(schemas);
+  R.map(writeSchemaFile)(schemas);
   // generate the index
-  exportIndex(schemas);
-  exportNamesTable(schemas);
+  writeIndexFile(schemas);
+  writeNamesTableFile(schemas);
 };
 
 module.exports = {

@@ -14,7 +14,7 @@
     "test": "jest",
     "build": "npm run normalize && npm run generate",
     "generate": "node ./src/scripts/generate-schemas",
-    "normalize": "node ./src/scripts/normalize-schemas"
+    "preprocess": "node ./src/scripts/preprocess-schemas"
   },
   "license": "ISC",
   "repository": {
@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "chalk": "^2.4.1",
+    "html-to-text": "^4.0.0",
     "jsonld": "^1.0.2",
     "lodash": "^4.17.10",
     "mkdirp": "^0.5.1",
