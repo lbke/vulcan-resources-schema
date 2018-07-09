@@ -1,9 +1,16 @@
 const R = require("ramda");
+const htmlToText = require("html-to-text");
 const prefix = R.curry((prefix, suffix) => `${prefix} ${suffix}`);
 const moduleExport = prefix(`module.export =`);
 const es6ExportDefault = prefix(`export default`);
 const es6Export = prefix("export");
 const declareConst = R.curry((name, value) => `const ${name} = ${value}`);
+
+const _toStr = htmlStr =>
+  htmlToText.fromString(htmlStr, {
+    noLinkBrackets: true,
+    ignoreHref: true
+  });
 
 const wrap = (charBegin, charEnd) => child =>
   `${charBegin}${child}${charEnd || charBegin}`;
@@ -11,7 +18,15 @@ const braces = wrap("{", "}");
 const brackets = wrap("[", "]");
 const paren = wrap("(", ")");
 const dblQuote = wrap('"');
-const str = dblQuote; // alias
+const str = R.pipe(
+  _toStr, // escape html chars
+  dblQuote
+); // alias
+const backticks = wrap("`");
+const templateStr = R.pipe(
+  _toStr, // escape html chars
+  backticks
+);
 
 const arrowFunc = R.curry(
   (args, content) => paren(args) + "=>" + braces(content)
@@ -39,6 +54,7 @@ const arr = R.compose(
 module.exports = {
   arr,
   arrowFunc,
+  backticks,
   braces,
   brackets,
   commaSeparated,
@@ -49,6 +65,7 @@ module.exports = {
   objField,
   obj,
   str,
+  templateStr,
   toField,
   toFieldStr
 };
