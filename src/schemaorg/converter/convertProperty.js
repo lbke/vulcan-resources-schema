@@ -1,31 +1,9 @@
 const R = require("ramda");
 const JSGenerator = require("../../utils/JSGenerator");
 const DEFAULT_FIELD_PROPS = require("../../config/defaultFieldProperties");
-const {
-  obj,
-  toField,
-  toFieldStr,
-  arrowFunc,
-  commaSeparated,
-  templateStr
-} = JSGenerator;
+const { obj, toField, toFieldStr, arrowFunc, commaSeparated } = JSGenerator;
 const { isClass, getTypesAsArray } = require("../common");
-
-// TODO: move this reusable helper elsewhere
-const generateViewOnlyField = (fieldName, fieldValue) => {
-  return [
-    toField(
-      fieldName,
-      obj([
-        toField("type", "String"),
-        toField("defaultValue", fieldValue),
-        toField("viewableBy", '["guests"]'),
-        toField("editableBy", '["admins"]'),
-        toField("insertableBy", '["admins"]')
-      ])
-    )
-  ];
-};
+const { generateDescriptionFields } = require("./common");
 
 const DATA_TYPES = [
   "Boolean",
@@ -98,13 +76,6 @@ const handleType = schema => {
     }
   }
 };
-
-const getLabel = R.prop("rdfs:label");
-const getComment = R.prop("rdfs:comment");
-const generateDescriptionFields = schema => [
-  toFieldStr("label", getLabel(schema)),
-  toField("description", templateStr(getComment(schema)))
-];
 
 /**
  * Create a vulcan property
