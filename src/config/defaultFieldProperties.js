@@ -11,12 +11,12 @@ const {
 } = JSGenerator;
 const fields = {
   viewableBy: ["guests"],
-  editableBy: ["guests"],
-  insertableBy: ["guests"]
+  editableBy: ["members"],
+  insertableBy: ["members"]
 };
 
 module.exports = [
   toField("viewableBy", arr([str("guests")])),
-  toField("editableBy", arr([str("guests")])),
-  toField("insertableBy", arr([str("guests")]))
+  toField("editableBy", arr([str("members")])),
+  toField("insertableBy", arr([str("members")]))
 ];
