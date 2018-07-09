@@ -21,32 +21,35 @@ const SCHEMAS_PATH = path.join(BUILD_PATH, "./schemaorg-normalized.jsonld");
 
 const getId = R.prop("@id");
 
-const exportSchema = schema =>
+const exportSchema = R.curry((schemaName, schema) =>
   R.compose(
     es6Export,
-    declareConst(getId(schema))
-  )(schema);
+    declareConst(schemaName)
+  )(schema)
+);
 
-const addDefaultExport = schema =>
-  R.flip(R.concat)(`\nexport default ${getId(schema)}`); // add a default export
+const addDefaultExport = schemaName =>
+  R.flip(R.concat)(`\nexport default ${schemaName}`); // add a default export
 
-const generateSchema = schema =>
-  R.pipe(
+const generateVulcanSchema = normalizedSchema => {
+  const schemaName = getId(normalizedSchema);
+  return R.pipe(
     R.tap(() => {
-      console.log("Generating schema ", schema["@id"]);
+      console.log("Generating schema ", schemaName);
     }),
     convertClass, // actually generate the schema
-    exportSchema, // export const NAME = {...},
-    addDefaultExport, // add an export default NAME
+    exportSchema(schemaName), // export const NAME = {...},
+    addDefaultExport(schemaName), // add an export default NAME
     prettify
-  )(schema);
+  )(normalizedSchema);
+};
 
 const generateVulcanSchemas = R.pipe(
   R.filter(isClass), // right now we export only classes
   R.values, // schemas is an object so we must convert it to an array
   R.map(classSchema => ({
     name: getId(classSchema),
-    schema: generateSchema(classSchema)
+    schema: generateVulcanSchema(classSchema)
   }))
 );
 

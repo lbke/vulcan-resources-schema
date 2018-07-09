@@ -4,30 +4,40 @@ const DEFAULT_FIELD_PROPS = require("../../config/defaultFieldProperties");
 const { obj, toField, toFieldStr, arrowFunc, commaSeparated } = JSGenerator;
 const { isClass, getTypesAsArray } = require("../common");
 
-const handleType = (graph, schema) => {
+const DATA_TYPES = [
+  "Boolean",
+  "Date",
+  "DateTime",
+  "Number",
+  "String",
+  "Time",
+  "URL"
+];
+const handleType = schema => {
   const possibleTypes = getTypesAsArray(schema);
   // TODO: should handle multiple types
   const possibleType = possibleTypes[0];
-  if (isClass) {
-    console.log("Class type is:", possibleType);
+  const possibleTypeName = possibleType["@id"];
+  if (isClass(possibleType) && !DATA_TYPES.includes(possibleTypeName)) {
+    console.log("possibleType", possibleTypeName);
     return [
       // TODO: resolveAs
       toField(
         "resolveAs",
         obj([
-          toFieldStr("fieldName", possibleType + "Resolved"),
-          toFieldStr("type", possibleType),
+          toFieldStr("fieldName", possibleTypeName + "Resolved"),
+          toFieldStr("type", possibleTypeName),
           toField(
             "resolver",
             arrowFunc(
               commaSeparated(["document", "args", "context"]),
               `
-        return context.${possibleType}.findOne(
-          { _id: document.${possibleType} },
+        return context.${possibleTypeName}.findOne(
+          { _id: document.${possibleTypeName} },
           {
-            fields: context.${possibleType}.getViewableFields(
+            fields: context.${possibleTypeName}.getViewableFields(
               context.currentUser,
-              context.${possibleType}
+              context.${possibleTypeName}
             )
           }
         );
@@ -39,14 +49,31 @@ const handleType = (graph, schema) => {
       )
     ];
   } else {
-    // TODO: write a switch
-    console.log("Property type is:", possibleType);
-    return [toField("type", "String")];
+    switch (possibleTypeName) {
+      //@see https://github.com/VulcanJS/Vulcan/blob/devel/packages/vulcan-forms/lib/components/FormComponent.jsx#L56
+      case "Boolean":
+        return [toField("type", "Boolean"), toFieldStr("control", "checkbox")];
+      case "Date":
+        return [toField("type", "Date")];
+      case "DateTime":
+        return [toField("type", "Date"), toFieldStr("control", "datetime")];
+      case "Number":
+        return [toField("type", "Number"), toFieldStr("control", "number")];
+      case "Text":
+        return [toField("type", "String")];
+      case "Time":
+        return [toField("type", "Date"), toFieldStr("control", "time")];
+      case "URL":
+        return [toField("type", "String"), toFieldStr("control", "url")];
+      default:
+        console.log(
+          `Possible types for ${schema["@id"]}: ${possibleTypes.map(
+            p => p["@id"]
+          )}`
+        );
+        return [toField("type", "String")];
+    }
   }
-  // if the type is a class => String with id
-  // if the type is a Property =>
-  //    if it is a basic property, use the correct type and control
-  //    else iterate to get the underlying basic property
 };
 
 const getPropertyLabel = R.pipe(
@@ -54,10 +81,6 @@ const getPropertyLabel = R.pipe(
   toFieldStr("label")
 );
 
-R.pipe(
-  R.always("String"),
-  toField("type")
-);
 /**
  * Create a vulcan property
  * @param {*} schema
@@ -70,6 +93,7 @@ const convertProperty = propertySchema =>
   ]);
 
 module.exports = {
+  DATA_TYPES,
   _handleType: handleType,
   default: convertProperty
 };
