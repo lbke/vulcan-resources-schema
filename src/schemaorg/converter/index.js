@@ -7,52 +7,42 @@
 const R = require("ramda");
 const fs = require("fs");
 const path = require("path");
-const chalk = require("chalk");
-const DEFAULT_PROPS = require("../../config/defaultProperties");
 const openJSON = require("../../utils/openJSON");
 const createOutdir = require("../../utils/createOutdir");
 const prettify = require("../../utils/prettify");
 const JSGenerator = require("../../utils/JSGenerator");
-const {
-  objField,
-  arr,
-  es6ExportDefault,
-  obj,
-  str,
-  toField,
-  toFieldStr
-} = JSGenerator;
+const { arr, es6ExportDefault, es6Export, declareConst, str } = JSGenerator;
 const convertProperty = require("./convertProperty").default;
+const convertClass = require("./convertClass").default;
 const { isClass } = require("../common");
 
-const SCHEMAS_PATH = path.resolve(
-  __dirname,
-  "../../build/schemaorg-normalized.jsonld"
-);
+const BUILD_PATH = path.resolve(__dirname, "../../../build");
+const SCHEMAS_PATH = path.join(BUILD_PATH, "./schemaorg-normalized.jsonld");
 
-const convertClass = R.pipe(
-  R.prop("fields"),
-  R.values,
-  R.map(field => toField(field["@id"], convertProperty(field))),
-  // add default props
-  R.flip(R.concat)(DEFAULT_PROPS),
-  obj
+const getId = R.prop("@id");
+
+const exportSchema = schema => R.compose(
+    es6Export,
+    declareConst(getId(schema))
+  )(schema),
+
+  const addDefaultExport = schema => R.flip(R.concat)(`\nexport default ${getId(schema)}`), // add a default export
+const generateSchema = R.pipe(
+  R.tap(() => {
+    console.log("Generating schema ", classSchema["@id"]);
+  }),
+  convertClass, // actually generate the schema
+  exportSchema, // export const NAME = {...},
+  addDefaultExport, // add an export default NAME
+  prettify
 );
 
 const generateVulcanSchemas = R.pipe(
-  // right now we handle only classes
-  R.filter(isClass),
-  R.values, // schemas is an object so we must convert
+  R.filter(isClass), // right now we export only classes
+  R.values, // schemas is an object so we must convert it to an array
   R.map(classSchema => ({
-    name: R.prop("@id")(classSchema),
-    schema: R.pipe(
-      R.tap(() => {
-        console.log("Generating schema ", classSchema["@id"]);
-      }),
-      convertClass,
-      es6ExportDefault,
-      prettify
-    )(classSchema)
+    name: getId(classSchema),
+    schema: generateSchema(classSchema)
   }))
 );
 
@@ -82,8 +72,8 @@ const generateNamesTable = R.pipe(
 
 const exportSchema = ({ name, schema }) => {
   const filePath = path.resolve(
-    __dirname,
-    "../../build/schemas",
+    BUILD_PATH,
+    "./schemas/",
     `./${schemaFileName(name)}`
   );
   fs.writeFileSync(filePath, schema, { encoding: "utf8", flag: "w" });
@@ -93,7 +83,7 @@ const exportIndex = R.pipe(
   R.tap(() => console.log("Generating the index file")),
   generateIndex,
   index => {
-    const filePath = path.resolve(__dirname, "../../build/schemas", "index.js");
+    const filePath = path.join(BUILD_PATH, "./schemas/", "./index.js");
     fs.writeFileSync(filePath, index, { encoding: "utf8", flag: "w" });
   }
 );
@@ -102,7 +92,7 @@ const exportNamesTable = R.pipe(
   R.tap(() => console.log("Generating the tablesName file")),
   generateNamesTable,
   table => {
-    const filePath = path.resolve(__dirname, "../../build", "schemasNames.js");
+    const filePath = path.join(BUILD_PATH, "./schemasNames.js");
     fs.writeFileSync(filePath, table, { encoding: "utf8", flag: "w" });
   }
 );

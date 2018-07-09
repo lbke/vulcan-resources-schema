@@ -2,6 +2,8 @@ const R = require("ramda");
 const prefix = R.curry((prefix, suffix) => `${prefix} ${suffix}`);
 const moduleExport = prefix(`module.export =`);
 const es6ExportDefault = prefix(`export default`);
+const es6Export = prefix("export");
+const declareConst = R.curry((name, value) => `const ${name} = ${value}`);
 
 const wrap = (charBegin, charEnd) => child =>
   `${charBegin}${child}${charEnd || charBegin}`;
@@ -35,16 +37,18 @@ const arr = R.compose(
 );
 
 module.exports = {
-  obj,
   arr,
-  es6ExportDefault,
-  objField,
-  str,
-  dblQuote,
+  arrowFunc,
   braces,
   brackets,
-  toField,
-  toFieldStr,
   commaSeparated,
-  arrowFunc
+  declareConst,
+  dblQuote,
+  es6Export,
+  es6ExportDefault,
+  objField,
+  obj,
+  str,
+  toField,
+  toFieldStr
 };

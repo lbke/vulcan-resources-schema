@@ -25,6 +25,7 @@ const SCHEMAS_PATH = path.resolve(
 
 const { getDomainsAsArray, getRangesAsArray, getGraph } = require("./common");
 const handleSuperClasses = require("./handleSuperClasses").default;
+const handleTypes = require("./handleTypes").default;
 
 /**
  * Remove the domainIncludes part of the schema
