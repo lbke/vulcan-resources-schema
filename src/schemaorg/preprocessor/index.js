@@ -25,34 +25,34 @@ const SCHEMAS_PATH = path.resolve(
 
 const { getDomainsAsArray, getRangesAsArray, getGraph } = require("./common");
 const handleSuperClasses = require("./handleSuperClasses").default;
-const handleTypes = require("./handleTypes").default;
+const handleProperties = require("./handleProperties").default;
 
 /**
- * Remove the domainIncludes part of the schema
- * Avoid redundancy during the normalization process
- * @param {*} schema
- */
-const cleanLinkedSchema = R.omit(["domainIncludes", "rangeIncludes"]);
-/**
- * Fill the domains with the schema according to its dependency
+ * Fill the graph "fields" depending on the domainInclues
  * @param {*} graph The whole graph
  * @param {*} schema A low leval field
  * @param {*} domains An array of domains the low level field is included in
  */
-const fillDomains = (graph, schema) => {
-  // fill the related entities fields (domain) with the current schema
-  domains = getDomainsAsArray(schema);
-  const cleanSchema = cleanLinkedSchema(schema);
-  return domains.reduce(
-    (res, domain) =>
-      R.set(
-        R.lensPath([domain["@id"], "fields", schema["@id"]]),
-        cleanSchema,
-        res
-      ),
-    graph
-  );
-};
+const fillFields = graph =>
+  R.pipe(
+    R.values,
+    R.reduce((resGraph, schema) => {
+      // fill the related entities fields (domain) with the current schema
+      domains = getDomainsAsArray(schema);
+      if (!domains || R.isEmpty(domains)) return resGraph;
+      const cleanSchema = R.omit(["domainIncludes"])(schema);
+      // add the fields in the relevant schema
+      return R.reduce(
+        (currentGraph, domain) =>
+          R.set(
+            R.lensPath([domain["@id"], "fields", schema["@id"]]),
+            cleanSchema,
+            currentGraph
+          ),
+        resGraph
+      )(domains);
+    }, graph)
+  )(graph);
 
 const scrapHttp = R.pipe(
   graph => JSON.stringify(graph),
@@ -72,26 +72,21 @@ const normalizeSchemaRanges = R.compose(
   normalizeRanges,
   getRangesAsArray
 );
-const fillPossibleTypes = (graph, schema) => {
-  const normalizedRanges = normalizeSchemaRanges(schema);
-  if (!normalizedRanges) return graph;
-  if (R.isEmpty(normalizedRanges)) return graph;
-  return R.set(
-    R.lensPath([schema["@id"], "possibleTypes"]),
-    normalizedRanges,
-    graph
-  );
-};
+const fillPossibleTypes = graph =>
+  R.map(schema => {
+    const normalizedRanges = normalizeSchemaRanges(schema);
+    if (!normalizedRanges || R.isEmpty(normalizedRanges)) return schema;
+    const newSchema = R.pipe(
+      R.set(R.lensPath(["possibleTypes"]), normalizedRanges),
+      R.omit(["rangeIncludes"])
+    )(schema);
+    return newSchema;
+  })(graph);
 
 const normalizeGraph = R.reduce((normalizedGraph, schema) => {
   let res = { ...normalizedGraph };
   const key = schema["@id"];
-  // add the schema to the result if it does not exist
-  const cleanSchema = cleanLinkedSchema(schema);
-  res[key] = cleanSchema;
-  // normalize the ranges
-  res = fillDomains(res, schema);
-  res = fillPossibleTypes(res, schema);
+  res[key] = schema;
   return res;
 }, {});
 
@@ -99,12 +94,7 @@ const normalizeGraph = R.reduce((normalizedGraph, schema) => {
  * Normalize the graph (arrays become hashmaps)
  * @param {*} graph
  */
-const restructureGraph = R.pipe(
-  scrapHttp,
-  normalizeGraph
-);
-
-const generateVulcanSchemas = normalizeGraph;
+const restructureGraph = R.pipe(normalizeGraph);
 
 /**
  * Generate the file
@@ -125,9 +115,12 @@ const run = (outdir = OUTDIR, schemasPath = SCHEMAS_PATH) => {
   R.pipe(
     openJSON,
     getGraph,
+    scrapHttp,
     restructureGraph,
+    fillPossibleTypes,
+    handleProperties, // fill the properties with their possibleTypes
+    fillFields,
     handleSuperClasses,
-    handleTypes,
     R.curry(createFile)(outdir, "schemaorg-normalized.jsonld")
   )(schemasPath);
 };

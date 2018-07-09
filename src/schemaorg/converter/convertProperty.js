@@ -1,7 +1,7 @@
 const R = require("ramda");
 const JSGenerator = require("../../utils/JSGenerator");
 const DEFAULT_FIELD_PROPS = require("../../config/defaultFieldProperties");
-const { obj, toField, toFieldStr } = JSGenerator;
+const { obj, toField, toFieldStr, arrowFunc, commaSeparated } = JSGenerator;
 const { isClass, getTypesAsArray } = require("../common");
 
 const handleType = (graph, schema) => {
@@ -9,10 +9,34 @@ const handleType = (graph, schema) => {
   // TODO: should handle multiple types
   const possibleType = possibleTypes[0];
   if (isClass) {
+    console.log("Class type is:", possibleType);
     return [
-      toField("type", "String")
       // TODO: resolveAs
-      //toField('resolveAs')
+      toField(
+        "resolveAs",
+        obj([
+          toFieldStr("fieldName", possibleType + "Resolved"),
+          toFieldStr("type", possibleType),
+          toField(
+            "resolver",
+            arrowFunc(
+              commaSeparated(["document", "args", "context"]),
+              `
+        return context.${possibleType}.findOne(
+          { _id: document.${possibleType} },
+          {
+            fields: context.${possibleType}.getViewableFields(
+              context.currentUser,
+              context.${possibleType}
+            )
+          }
+        );
+       `
+            )
+          ),
+          toField("optional", "true")
+        ])
+      )
     ];
   } else {
     // TODO: write a switch

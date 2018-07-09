@@ -9,7 +9,7 @@ const convertClass = R.pipe(
   R.values,
   R.map(field => toField(field["@id"], convertProperty(field))),
   // add default props
-  R.flip(R.concat)(DEFAULT_PROPS),
+  R.concat(DEFAULT_PROPS),
   obj
 );
 

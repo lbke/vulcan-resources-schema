@@ -80,10 +80,10 @@ module.exports = [
           toField(
             "resolver",
             arrowFunc(
-              commaSeparated(["movie", "args", "context"]),
+              commaSeparated(["document", "args", "context"]),
               `
         return context.Users.findOne(
-          { _id: movie.userId },
+          { _id: document.userId },
           {
             fields: context.Users.getViewableFields(
               context.currentUser,
