@@ -1,2 +1,2 @@
-const Schemaorg = require("../converters/schemaorg").default;
+const Schemaorg = require("../schemaorg/converter").default;
 Schemaorg();
