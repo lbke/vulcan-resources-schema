@@ -26,6 +26,7 @@ const SCHEMAS_PATH = path.resolve(
 const { getDomainsAsArray, getRangesAsArray, getGraph } = require("./common");
 const handleSuperClasses = require("./handleSuperClasses").default;
 const handleProperties = require("./handleProperties").default;
+const nestProperties = require("./nestProperties").default;
 
 /**
  * Fill the graph "fields" depending on the domainInclues

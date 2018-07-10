@@ -6,8 +6,11 @@ const {
   default: handleSuperClasses
 } = require("../../src/schemaorg/preprocessor/handleSuperClasses");
 const {
-  default: handleTypes
-} = require("../../src/schemaorg/preprocessor/handleTypes");
+  default: handleProperties
+} = require("../../src/schemaorg/preprocessor/handleProperties");
+const {
+  default: nestProperties
+} = require("../../src/schemaorg/preprocessor/nestProperties");
 const VulcanSchemasGenerator = require("../../src/schemaorg/preprocessor/index");
 const { _normalizeGraph, _getGraph, SCHEMAS_PATH } = VulcanSchemasGenerator;
 
@@ -231,6 +234,45 @@ describe("schemaorg.tests.js", () => {
         expectedRes
       );
     });
+  });
+
+  describe("nestProperties", () => {
+    const logo = {
+      "@id": "logo",
+      "@type": "rdf:Property",
+      "rdfs:subPropertyOf": {
+        "@id": "image"
+      },
+      possibleTypes: {
+        URL: {
+          "@id": "URL",
+          "@type": "rdfs:Class"
+        }
+      }
+    };
+    const photo = {
+      "@id": "photo",
+      "@type": "rdf:Property",
+      "rdfs:subPropertyOf": {
+        "@id": "image"
+      },
+      possibleTypes: {
+        URL: {
+          "@id": "URL",
+          "@type": "rdfs:Class"
+        }
+      }
+    };
+    test("generate the nested property", () => {
+      const graph = { logo };
+      const res = nestProperties(graph);
+      const imageObject = res["imageObject"];
+      expect(imageObject).toBeDefined();
+      expect(imageObject).toBeInstanceOf(Object);
+      expect(imageObject["@id"]).toEqual("imageObject");
+      expect(imageObject["@type"]).toEqual("rdfs:Property");
+    });
+    test.skip("replace the fields in the classes with the superproperty property", () => {});
   });
 
   describe("handleSuperClasses", () => {
