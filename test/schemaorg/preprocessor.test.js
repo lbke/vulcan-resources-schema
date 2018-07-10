@@ -278,17 +278,37 @@ describe("schemaorg.tests.js", () => {
         }
       }
     };
+    const SomeClass = {
+      "@id": "SomeClass",
+      fields: {
+        logo: {
+          "@id": "logo"
+        }
+      }
+    };
     test("generate the nested property", () => {
       const graph = { logo };
       const res = nestProperties(graph);
-      console.log(res);
       const imageObject = res["imageObject"];
       expect(imageObject).toBeDefined();
       expect(imageObject).toBeInstanceOf(Object);
       expect(imageObject["@id"]).toEqual("imageObject");
       expect(imageObject["@type"]).toEqual("Nested");
     });
-    test.skip("replace the fields in the classes with the superproperty property", () => {});
+    test("replace the fields in the classes with the superproperty property", () => {
+      const graph = { SomeClass, logo };
+      const res = nestProperties(graph);
+      const imageObject = res["SomeClass"]["fields"]["imageObject"];
+      expect(imageObject).toBeDefined();
+      expect(imageObject).toBeInstanceOf(Object);
+      expect(imageObject["@id"]).toEqual("imageObject");
+    });
+    test("remove the unnecessary fields", () => {
+      const graph = { SomeClass, logo };
+      const res = nestProperties(graph);
+      const logoRes = res["SomeClass"]["fields"]["logo"];
+      expect(logoRes).toBeUndefined();
+    });
   });
 
   describe("handleSuperClasses", () => {
