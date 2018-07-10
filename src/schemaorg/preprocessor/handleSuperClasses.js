@@ -20,7 +20,7 @@ const mergeSchemaSuperClasses = R.curry((normalizedGraph, schema) => {
   )(superClasses);
   return {
     ...schema,
-    fields: { ...fields, ...schema.fields },
+    fields: { ...schema.fields, ...fields },
     // get the parent superClass so we can iterate recursively if needed
     "rdfs:subClassOf": superSuperClasses
   };
