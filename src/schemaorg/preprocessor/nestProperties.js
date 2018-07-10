@@ -39,19 +39,36 @@ const removeSubPropertyFromFields = subPropertyId => schema => {
   const newFields = R.omit([subPropertyId], schema.fields);
   return { ...schema, fields: newFields };
 };
+const addSuperPropertiesToFields = superPropertiesSchemas => schema => {
+  const newFields = superPropertiesSchemas.reduce((fields, superSchema) => {
+    return { ...fields, [superSchema["@id"]]: superSchema };
+  }, schema.field);
+  return { ...schema, fields: newFields };
+};
 
 // remove occurrence of a subproperty from the fields
 const removeSubProperty = subProperty => graph => {
   const subPropertyId = subProperty["@id"];
+  // get the super properties names
+  const superProperties = getSuperPropertiesAsArray(subProperty);
+  const superPropertiesIds = R.map(sp => `${sp["@id"]}Object`)(superProperties);
+  const superPropertiesSchemas = R.map(id => graph[id])(superPropertiesIds);
+
   const removeCurrentSubPropertyFromFields = removeSubPropertyFromFields(
     subPropertyId
+  );
+  const addCurrentSuperPropertiesToFields = addSuperPropertiesToFields(
+    superPropertiesSchemas
   );
   // for each schema
   return R.reduce((resGraph, schema) => {
     // if the schema is a class, remove the subProperty from the fields
     const cleanSchema = R.ifElse(
       isClass,
-      removeCurrentSubPropertyFromFields,
+      R.pipe(
+        removeCurrentSubPropertyFromFields,
+        addCurrentSuperPropertiesToFields
+      ),
       R.identity
     )(schema);
     // update the graph
