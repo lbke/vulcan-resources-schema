@@ -281,6 +281,7 @@ describe("schemaorg.tests.js", () => {
     test("generate the nested property", () => {
       const graph = { logo };
       const res = nestProperties(graph);
+      console.log(res);
       const imageObject = res["imageObject"];
       expect(imageObject).toBeDefined();
       expect(imageObject).toBeInstanceOf(Object);
