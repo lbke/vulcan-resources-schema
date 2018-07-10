@@ -207,7 +207,7 @@ describe("schemaorg.tests.js", () => {
     });
   });
 
-  describe("handleTypes", () => {
+  describe("handleProperties", () => {
     const property = {
       "@id": "withType",
       "@type": "rdfs:Property"
@@ -236,14 +236,14 @@ describe("schemaorg.tests.js", () => {
     };
     test("load a property definition", () => {
       const graph = { propertyOneSubproperty, someProperty };
-      const res = handleTypes(graph);
+      const res = handleProperties(graph);
       expect(
         res.propertyOneSubproperty.possibleTypes[someProperty["@id"]]
       ).toEqual(someProperty);
     });
     test("add the type to class fields", () => {
       const graph = { propertyOneClass, someClass };
-      const res = handleTypes(graph);
+      const res = handleProperties(graph);
       const expectedRes = R.omit(["smth"], someClass);
       expect(res.propertyOneClass.possibleTypes[someClass["@id"]]).toEqual(
         expectedRes
