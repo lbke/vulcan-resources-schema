@@ -45,11 +45,15 @@ const fillFields = graph =>
       // add the fields in the relevant schema
       return R.reduce(
         (currentGraph, domain) =>
-          R.set(
-            R.lensPath([domain["@id"], "fields", schema["@id"]]),
-            cleanSchema,
-            currentGraph
-          ),
+          R.pipe(
+            // set the class fields
+            R.set(
+              R.lensPath([domain["@id"], "fields", schema["@id"]]),
+              cleanSchema
+            ),
+            // remove domain includes from the property
+            R.set(R.lensPath([schema["@id"]]), cleanSchema)
+          )(currentGraph),
         resGraph
       )(domains);
     }, graph)
@@ -130,5 +134,7 @@ module.exports = {
   SCHEMAS_PATH,
   _getGraph: getGraph,
   _normalizeGraph: normalizeGraph,
+  _fillPossibleTypes: fillPossibleTypes,
+  _fillFields: fillFields,
   default: run
 };

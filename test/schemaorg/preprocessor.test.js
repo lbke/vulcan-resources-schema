@@ -12,7 +12,12 @@ const {
   default: nestProperties
 } = require("../../src/schemaorg/preprocessor/nestProperties");
 const VulcanSchemasGenerator = require("../../src/schemaorg/preprocessor/index");
-const { _normalizeGraph, _getGraph, SCHEMAS_PATH } = VulcanSchemasGenerator;
+const {
+  _normalizeGraph,
+  _getGraph,
+  _fillFields,
+  SCHEMAS_PATH
+} = VulcanSchemasGenerator;
 
 describe("schemaorg.tests.js", () => {
   describe("common", () => {
@@ -45,95 +50,105 @@ describe("schemaorg.tests.js", () => {
     const coffeeShop = {
       "@id": "CafeOrCoffeeShop"
     };
-    const restaurant = {
-      "@id": "Restaurant"
-    };
-    test("normalize a schema with no domains", () => {
+    test("transform the graph into a normalized hashMap", () => {
       const graph = [coffeeShop];
       const result = { [coffeeShop["@id"]]: coffeeShop };
       const normalizedGraph = _normalizeGraph(graph);
       expect(normalizedGraph).toBeInstanceOf(Object);
       expect(normalizedGraph).toMatchObject(result);
     });
+  });
 
+  describe("fillFields", () => {
+    const CafeOrCoffeeShop = {
+      "@id": "CafeOrCoffeeShop"
+    };
+    const Restaurant = {
+      "@id": "Restaurant"
+    };
     const someFieldId = {
-      "@id": "somefield"
+      "@id": "someField"
     };
     const someField = {
       ...someFieldId,
       domainIncludes: {
-        "@id": coffeeShop["@id"]
+        "@id": CafeOrCoffeeShop["@id"]
       }
     };
-    test("normalize a graph (one field one domain)", () => {
-      const graph = [coffeeShop, someField];
+    test("fill fields of a class (one field one domain)", () => {
+      const graph = { CafeOrCoffeeShop, someField };
       const result = {
-        [coffeeShop["@id"]]: {
-          ...coffeeShop,
+        [CafeOrCoffeeShop["@id"]]: {
+          ...CafeOrCoffeeShop,
           fields: { [someField["@id"]]: someFieldId }
         },
         [someField["@id"]]: someFieldId
       };
-      const normalizedGraph = _normalizeGraph(graph);
+      const normalizedGraph = _fillFields(graph);
       expect(normalizedGraph).toBeInstanceOf(Object);
       expect(normalizedGraph).toMatchObject(result);
     });
-    test("normalize a graph (one field many domains)", () => {
+    test("fill fields of a class (one field many domains)", () => {
       const someField = {
         ...someFieldId,
         domainIncludes: [
           {
-            "@id": coffeeShop["@id"]
+            "@id": CafeOrCoffeeShop["@id"]
           },
           {
-            "@id": restaurant["@id"]
+            "@id": Restaurant["@id"]
           }
         ]
       };
-      const graph = [coffeeShop, restaurant, someField];
+      const graph = { CafeOrCoffeeShop, Restaurant, someField };
       const result = {
-        [coffeeShop["@id"]]: {
-          ...coffeeShop,
+        [CafeOrCoffeeShop["@id"]]: {
+          ...CafeOrCoffeeShop,
           fields: { [someField["@id"]]: someFieldId }
         },
-        [restaurant["@id"]]: {
-          ...restaurant,
+        [Restaurant["@id"]]: {
+          ...Restaurant,
           fields: { [someField["@id"]]: someFieldId }
         },
         [someField["@id"]]: someFieldId
       };
-      const normalizedGraph = _normalizeGraph(graph);
+      const normalizedGraph = _fillFields(graph);
       expect(normalizedGraph).toBeInstanceOf(Object);
       expect(normalizedGraph).toMatchObject(result);
     });
-    test("normalize a graph when domain not yet seen(one field many domains)", () => {
+    test("fill fields of class a graph when domain not yet seen(one field many domains)", () => {
       const someField = {
         ...someFieldId,
         domainIncludes: [{ "@id": "CafeOrCoffeeShop" }, { "@id": "Restaurant" }]
       };
-      const graph = [coffeeShop, someField];
+      const graph = { CafeOrCoffeeShop, someField };
       const result = {
-        [coffeeShop["@id"]]: {
-          ...coffeeShop,
+        [CafeOrCoffeeShop["@id"]]: {
+          ...CafeOrCoffeeShop,
           fields: { [someField["@id"]]: someFieldId }
         },
-        [restaurant["@id"]]: {
+        [Restaurant["@id"]]: {
           fields: { [someField["@id"]]: someFieldId }
         },
         [someField["@id"]]: someFieldId
       };
-      const normalizedGraph = _normalizeGraph(graph);
+      const normalizedGraph = _fillFields(graph);
       expect(normalizedGraph).toBeInstanceOf(Object);
       expect(normalizedGraph).toMatchObject(result);
     });
 
-    test("remove the domainIncludes field from domains", () => {
-      const graph = [coffeeShop, someField];
+    test("remove the domainIncludes field in the class after processing", () => {
+      const graph = { CafeOrCoffeeShop, someField };
       const result = someFieldId;
-      const normalizedGraph = _normalizeGraph(graph);
+      const normalizedGraph = _fillFields(graph);
       expect(
-        normalizedGraph[coffeeShop["@id"]].fields[someField["@id"]]
+        normalizedGraph[CafeOrCoffeeShop["@id"]].fields[someField["@id"]]
       ).toMatchObject(result);
+    });
+    test("remove the domainIncludes field in the property after processing", () => {
+      const graph = { CafeOrCoffeeShop, someField };
+      const normalizedGraph = _fillFields(graph);
+      expect(normalizedGraph[someField["@id"]]).toMatchObject(someFieldId);
     });
   });
 
