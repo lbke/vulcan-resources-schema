@@ -10,31 +10,38 @@ const reduceOnly = require("../../utils/reduceOnly");
 const createSuperProperty = superPropertyId =>
   R.set(R.lensPath([superPropertyId]), {
     "@id": superPropertyId,
-    "@type": "rdfs:Property",
+    "@type": "Nested",
     fields: {}
   });
 
 const addSubProperty = (superPropertyId, subProperty) =>
   R.set(
-    R.lensPath([superPropertyId, "fields", subProperty["id"]], subProperty)
+    R.lensPath([superPropertyId, "fields", subProperty["@id"]]),
+    subProperty
   );
 
 // TODO: handle the description field that is special with vulcan
-const nestProperties = reduceOnly(hasSuperProperty, (resultGraph, schema) => {
-  // pour chaque subProperty
-  const superProperties = getSuperPropertiesAsArray(schema);
-  return R.reduce((resGraph, superProperty) => {
-    const superPropertyId = superProperty["@id"];
-    const schemaId = schema["@id"];
-    // créer si besoin le champ parent de type nested
-    const graphWithSuperProperty = R.ifElse(
-      R.has(superPropertyId),
-      R.identity,
-      createSuperProperty
-    )(resGraph);
-    return addSubProperty(superPropertyId, subProperty)(graphWithSuperProperty);
-  }, resultGraph)(superProperties);
-});
+const nestProperties = graph =>
+  reduceOnly(
+    hasSuperProperty,
+    (resultGraph, schema) => {
+      // pour chaque subProperty
+      const superProperties = getSuperPropertiesAsArray(schema);
+      return R.reduce((resGraph, superProperty) => {
+        const superPropertyId = superProperty["@id"] + "Object";
+        const newGraph = R.pipe(
+          R.ifElse(
+            R.has(superPropertyId),
+            R.identity,
+            createSuperProperty(superPropertyId)
+          ),
+          addSubProperty(superPropertyId, schema)
+        )(resGraph);
+        return newGraph;
+      }, resultGraph)(superProperties);
+    },
+    graph
+  )(R.values(graph));
 
 module.exports = {
   default: nestProperties

@@ -286,7 +286,7 @@ describe("schemaorg.tests.js", () => {
       expect(imageObject).toBeDefined();
       expect(imageObject).toBeInstanceOf(Object);
       expect(imageObject["@id"]).toEqual("imageObject");
-      expect(imageObject["@type"]).toEqual("rdfs:Property");
+      expect(imageObject["@type"]).toEqual("Nested");
     });
     test.skip("replace the fields in the classes with the superproperty property", () => {});
   });
