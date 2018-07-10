@@ -16,6 +16,7 @@ const {
   _normalizeGraph,
   _getGraph,
   _fillFields,
+  _fillPossibleTypes,
   SCHEMAS_PATH
 } = VulcanSchemasGenerator;
 
@@ -152,7 +153,7 @@ describe("schemaorg.tests.js", () => {
     });
   });
 
-  describe("rangeIncludes (possibleTypes)", () => {
+  describe("fillePossibleTypes (rangeIncludes)", () => {
     // rangeIncludes (= possibleTypes for the entity)
     const rangeFieldId = { "@id": "someRangeField" };
     const someTypeId = { "@id": "someType" };
@@ -163,7 +164,7 @@ describe("schemaorg.tests.js", () => {
           ...someTypeId
         }
       };
-      const graph = [rangeField];
+      const graph = { someRangeField: rangeField };
       const result = {
         [rangeField["@id"]]: {
           ...rangeFieldId,
@@ -172,7 +173,7 @@ describe("schemaorg.tests.js", () => {
           }
         }
       };
-      const normalizedGraph = _normalizeGraph(graph);
+      const normalizedGraph = _fillPossibleTypes(graph);
       expect(normalizedGraph).toMatchObject(result);
     });
     test("normalize the rangeIncludes (multiple ranges)", () => {
@@ -181,7 +182,7 @@ describe("schemaorg.tests.js", () => {
         ...rangeFieldId,
         rangeIncludes: [someTypeId, someOtherTypeId]
       };
-      const graph = [rangeField];
+      const graph = { someRangeField: rangeField };
       const result = {
         [rangeField["@id"]]: {
           ...rangeFieldId,
@@ -191,16 +192,15 @@ describe("schemaorg.tests.js", () => {
           }
         }
       };
-      const normalizedGraph = _normalizeGraph(graph);
+      const normalizedGraph = _fillPossibleTypes(graph);
       expect(normalizedGraph).toMatchObject(result);
     });
     test("should not add the possibleTypes prop when there are no types", () => {
-      const someOtherTypeId = { "@id": "someOtherType" };
       const noRangeField = {
         ...rangeFieldId
       };
-      const graph = [noRangeField];
-      const normalizedGraph = _normalizeGraph(graph);
+      const graph = { someRangeField: noRangeField };
+      const normalizedGraph = _fillPossibleTypes(graph);
       expect(
         normalizedGraph[noRangeField["@id"]].possibleTypes
       ).toBeUndefined();
