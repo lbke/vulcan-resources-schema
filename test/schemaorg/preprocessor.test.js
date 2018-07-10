@@ -280,6 +280,7 @@ describe("schemaorg.tests.js", () => {
     };
     const SomeClass = {
       "@id": "SomeClass",
+      "@type": "rdfs:Class",
       fields: {
         logo: {
           "@id": "logo"
