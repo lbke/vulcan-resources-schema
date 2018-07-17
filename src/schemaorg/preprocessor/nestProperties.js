@@ -35,11 +35,19 @@ const generateSuperProperty = subProperty => (resGraph, superProperty) => {
   return newGraph;
 };
 
+// remove a subProperty from a Class
 const removeSubPropertyFromFields = subPropertyId => schema => {
   const newFields = R.omit([subPropertyId], schema.fields);
   return { ...schema, fields: newFields };
 };
+// enhance the fields of a class with a superProperty
 const addSuperPropertiesToFields = superPropertiesSchemas => schema => {
+  console.log(
+    "superPropertiesSchemas",
+    superPropertiesSchemas.map(s => s["@id"]),
+    "schema",
+    schema["@id"]
+  );
   const newFields = superPropertiesSchemas.reduce((fields, superSchema) => {
     return { ...fields, [superSchema["@id"]]: superSchema };
   }, schema.field);
