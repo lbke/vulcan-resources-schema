@@ -8,7 +8,9 @@ const getTypesAsArray = R.pipe(
 const hasTypes = schema =>
   R.has("possibleTypes")(schema) && !!getTypesAsArray(schema).length;
 
-const isClass = R.propEq("@type", "rdfs:Class");
+const typeEquals = R.propEq("@type");
+const isClass = typeEquals("rdfs:Class");
+const isNested = typeEquals("Nested");
 
 const extractId = R.pipe(
   R.split("/"),
@@ -20,5 +22,6 @@ const getGraph = R.path(["@graph", 0, "@graph"]);
 module.exports = {
   getTypesAsArray,
   hasTypes,
-  isClass
+  isClass,
+  isNested
 };

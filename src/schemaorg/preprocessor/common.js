@@ -1,6 +1,11 @@
 const R = require("ramda");
 const asArray = require("../../utils/asArray");
 
+const propAsArray = propName =>
+  R.pipe(
+    R.prop(propName),
+    asArray
+  );
 const notEmpty = R.pipe(
   R.prop("length"),
   R.gt(0)
@@ -17,8 +22,13 @@ const getSuperClassesAsArray = R.pipe(
   R.prop("rdfs:subClassOf"),
   asArray
 );
+const getSuperPropertiesAsArray = propAsArray("rdfs:subPropertyOf");
+
 const hasSuperClass = schema =>
   R.has("rdfs:subClassOf")(schema) && !!getSuperClassesAsArray(schema).length;
+
+const hasSuperProperty = schema =>
+  R.has("rdfs:subPropertyOf") && !!getSuperPropertiesAsArray(schema).length;
 
 const getTypesAsArray = R.compose(
   asArray,
@@ -49,7 +59,9 @@ module.exports = {
   getSuperClassesAsArray,
   getTypesAsArray,
   hasSuperClass,
+  hasSuperProperty,
   hasTypes,
   extractId,
-  getGraph
+  getGraph,
+  getSuperPropertiesAsArray
 };
