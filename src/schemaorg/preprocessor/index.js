@@ -131,7 +131,7 @@ const run = (outdir = OUTDIR, schemasPath = SCHEMAS_PATH) => {
     R.tap(() => console.log("Filling the possibleTypes of Properties")),
     handleProperties, // fill the properties with their possibleTypes
     R.tap(() => console.log("Filling the Class fields with own fields")),
-    fillFields
+    fillFields,
     // this come after the fields are filled, maybe we could optimize this workflow
     // and avoid filling the fields beforehand
     R.tap(() => console.log("Generating nested properties")),
