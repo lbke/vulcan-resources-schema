@@ -17,9 +17,14 @@ const addFieldsToGraph = R.curry((fields, schemaId, graph) =>
     graph
   )(fields)
 );
-const addFieldToSchema = R.curry((field, schema) =>
-  R.set(R.lensPath(["fields", field["@id"]]), field)(schema)
-);
+const addFieldToSchema = R.curry((field, schema) => ({
+  ...schema,
+  fields: {
+    ...(schema.fields || {}),
+    [field["@id"]]: field
+  }
+}));
+//  R.set(R.lensPath(["fields", field["@id"]]), field)(schema)
 const addFieldsToSchema = R.curry((fields, schema) =>
   R.reduce((newSchema, field) => addFieldToSchema(field, newSchema), schema)(
     fields
@@ -73,13 +78,6 @@ const removeSubProperty = subProperty => graph => {
       R.pipe(
         removeFieldFromSchema(subPropertyId),
         addFieldsToSchema(superPropertiesSchemas)
-        /*R.tap(s => {
-          console.log(
-            "\tcleanSchema",
-            s["@id"],
-            R.map(R.prop("@id"), R.values(s.fields))
-          );
-        })*/
       ),
       R.identity
     )(schema);
