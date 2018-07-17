@@ -8,6 +8,29 @@ const { hasSuperProperty, getSuperPropertiesAsArray } = require("./common");
 const { isClass } = require("../common");
 const reduceOnly = require("../../utils/reduceOnly");
 
+const addFieldToGraph = R.curry((field, schemaId, graph) =>
+  R.set(R.lensPath([schemaId, "fields", field["@id"]]), field)(graph)
+);
+const addFieldsToGraph = R.curry((fields, schemaId, graph) =>
+  R.reduce(
+    (newGraph, field) => addFieldToGraph(field, schemaId, newGraph),
+    graph
+  )(fields)
+);
+const addFieldToSchema = R.curry((field, schema) =>
+  R.set(R.lensPath(["fields", field["@id"]]), field)(schema)
+);
+const addFieldsToSchema = R.curry((fields, schema) =>
+  R.reduce((newSchema, field) => addFieldToSchema(field, newSchema), schema)(
+    fields
+  )
+);
+
+const removeFieldFromSchema = R.curry((fieldId, schema) => {
+  const newFields = R.omit([fieldId], schema.fields);
+  return { ...schema, fields: newFields };
+});
+
 // create a new super property
 const createSuperProperty = superPropertyId =>
   R.set(R.lensPath([superPropertyId]), {
@@ -15,13 +38,11 @@ const createSuperProperty = superPropertyId =>
     "@type": "Nested",
     fields: {}
   });
-// add a subproperty to an existing superProperty
-const addSubProperty = (superPropertyId, subProperty) =>
-  R.set(
-    R.lensPath([superPropertyId, "fields", subProperty["@id"]]),
-    subProperty
-  );
 
+/**
+ * Add a subProperty to a superProperty. Create the superProperty if it does not exist yet.
+ * @param {*} subProperty
+ */
 const generateSuperProperty = subProperty => (resGraph, superProperty) => {
   const superPropertyId = superProperty["@id"] + "Object";
   const newGraph = R.pipe(
@@ -30,28 +51,9 @@ const generateSuperProperty = subProperty => (resGraph, superProperty) => {
       R.identity,
       createSuperProperty(superPropertyId)
     ),
-    addSubProperty(superPropertyId, subProperty)
+    addFieldToGraph(subProperty, superPropertyId)
   )(resGraph);
   return newGraph;
-};
-
-// remove a subProperty from a Class
-const removeSubPropertyFromFields = subPropertyId => schema => {
-  const newFields = R.omit([subPropertyId], schema.fields);
-  return { ...schema, fields: newFields };
-};
-// enhance the fields of a class with a superProperty
-const addSuperPropertiesToFields = superPropertiesSchemas => schema => {
-  console.log(
-    "superPropertiesSchemas",
-    superPropertiesSchemas.map(s => s["@id"]),
-    "schema",
-    schema["@id"]
-  );
-  const newFields = superPropertiesSchemas.reduce((fields, superSchema) => {
-    return { ...fields, [superSchema["@id"]]: superSchema };
-  }, schema.field);
-  return { ...schema, fields: newFields };
 };
 
 // remove occurrence of a subproperty from the fields
@@ -62,20 +64,22 @@ const removeSubProperty = subProperty => graph => {
   const superPropertiesIds = R.map(sp => `${sp["@id"]}Object`)(superProperties);
   const superPropertiesSchemas = R.map(id => graph[id])(superPropertiesIds);
 
-  const removeCurrentSubPropertyFromFields = removeSubPropertyFromFields(
-    subPropertyId
-  );
-  const addCurrentSuperPropertiesToFields = addSuperPropertiesToFields(
-    superPropertiesSchemas
-  );
   // for each schema
   return R.reduce((resGraph, schema) => {
     // if the schema is a class, remove the subProperty from the fields
+    // and add the superProperties
     const cleanSchema = R.ifElse(
       isClass,
       R.pipe(
-        removeCurrentSubPropertyFromFields,
-        addCurrentSuperPropertiesToFields
+        removeFieldFromSchema(subPropertyId),
+        addFieldsToSchema(superPropertiesSchemas)
+        /*R.tap(s => {
+          console.log(
+            "\tcleanSchema",
+            s["@id"],
+            R.map(R.prop("@id"), R.values(s.fields))
+          );
+        })*/
       ),
       R.identity
     )(schema);
