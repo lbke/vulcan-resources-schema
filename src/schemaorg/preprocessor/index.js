@@ -26,6 +26,7 @@ const SCHEMAS_PATH = path.resolve(
 const { getDomainsAsArray, getRangesAsArray, getGraph } = require("./common");
 const handleSuperClasses = require("./handleSuperClasses").default;
 const handleProperties = require("./handleProperties").default;
+const nestProperties = require("./nestProperties").default;
 
 /**
  * Fill the graph "fields" depending on the domainInclues
@@ -44,11 +45,15 @@ const fillFields = graph =>
       // add the fields in the relevant schema
       return R.reduce(
         (currentGraph, domain) =>
-          R.set(
-            R.lensPath([domain["@id"], "fields", schema["@id"]]),
-            cleanSchema,
-            currentGraph
-          ),
+          R.pipe(
+            // set the class fields
+            R.set(
+              R.lensPath([domain["@id"], "fields", schema["@id"]]),
+              cleanSchema
+            ),
+            // remove domain includes from the property
+            R.set(R.lensPath([schema["@id"]]), cleanSchema)
+          )(currentGraph),
         resGraph
       )(domains);
     }, graph)
@@ -113,13 +118,27 @@ const createFile = (outdir, filename, data) => {
 const run = (outdir = OUTDIR, schemasPath = SCHEMAS_PATH) => {
   createOutdir();
   R.pipe(
+    R.tap(() => console.log("Opening JSON")),
     openJSON,
+    R.tap(() => console.log("Getting the graph")),
     getGraph,
+    R.tap(() => console.log("Getting the graph")),
     scrapHttp,
+    R.tap(() => console.log("Scrap the http")),
     restructureGraph,
+    R.tap(() => console.log("Filling the possible types")),
     fillPossibleTypes,
+    R.tap(() => console.log("Filling the possibleTypes of Properties")),
     handleProperties, // fill the properties with their possibleTypes
+    R.tap(() => console.log("Filling the Class fields with own fields")),
     fillFields,
+    // this come after the fields are filled, maybe we could optimize this workflow
+    // and avoid filling the fields beforehand
+    R.tap(() => console.log("Generating nested properties")),
+    nestProperties,
+    R.tap(() =>
+      console.log("Filling the Class fields with super classes fields")
+    ),
     handleSuperClasses,
     R.curry(createFile)(outdir, "schemaorg-normalized.jsonld")
   )(schemasPath);
@@ -129,5 +148,7 @@ module.exports = {
   SCHEMAS_PATH,
   _getGraph: getGraph,
   _normalizeGraph: normalizeGraph,
+  _fillPossibleTypes: fillPossibleTypes,
+  _fillFields: fillFields,
   default: run
 };

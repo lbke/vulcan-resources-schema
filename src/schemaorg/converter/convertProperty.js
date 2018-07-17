@@ -2,7 +2,7 @@ const R = require("ramda");
 const JSGenerator = require("../../utils/JSGenerator");
 const DEFAULT_FIELD_PROPS = require("../../config/defaultFieldProperties");
 const { obj, toField, toFieldStr, arrowFunc, commaSeparated } = JSGenerator;
-const { isClass, getTypesAsArray } = require("../common");
+const { isNested, isClass, getTypesAsArray } = require("../common");
 const { generateDescriptionFields } = require("./common");
 
 const DATA_TYPES = [
@@ -14,25 +14,19 @@ const DATA_TYPES = [
   "Time",
   "URL"
 ];
-const handleType = schema => {
-  const possibleTypes = getTypesAsArray(schema);
-  // TODO: should handle multiple types
-  const possibleType = possibleTypes[0];
-  const possibleTypeName = possibleType["@id"];
-  if (isClass(possibleType) && !DATA_TYPES.includes(possibleTypeName)) {
-    //console.log("possibleType", possibleTypeName);
-    return [
-      // TODO: resolveAs
+
+const handleClassType = possibleTypeName => [
+  // TODO: resolveAs
+  toField(
+    "resolveAs",
+    obj([
+      toFieldStr("fieldName", possibleTypeName + "Resolved"),
+      toFieldStr("type", possibleTypeName),
       toField(
-        "resolveAs",
-        obj([
-          toFieldStr("fieldName", possibleTypeName + "Resolved"),
-          toFieldStr("type", possibleTypeName),
-          toField(
-            "resolver",
-            arrowFunc(
-              commaSeparated(["document", "args", "context"]),
-              `
+        "resolver",
+        arrowFunc(
+          commaSeparated(["document", "args", "context"]),
+          `
         return context.${possibleTypeName}.findOne(
           { _id: document.${possibleTypeName} },
           {
@@ -43,53 +37,64 @@ const handleType = schema => {
           }
         );
        `
-            )
-          ),
-          toField("optional", "true")
-        ])
-      )
-    ];
-  } else {
-    switch (possibleTypeName) {
-      //@see https://github.com/VulcanJS/Vulcan/blob/devel/packages/vulcan-forms/lib/components/FormComponent.jsx#L56
-      case "Boolean":
-        return [toField("type", "Boolean"), toFieldStr("input", "checkbox")];
-      case "Date":
-        return [toField("type", "Date")];
-      case "DateTime":
-        return [toField("type", "Date"), toFieldStr("input", "datetime")];
-      case "Number":
-        return [toField("type", "Number"), toFieldStr("input", "number")];
-      case "Text":
-        return [toField("type", "String")];
-      case "Time":
-        return [toField("type", "Date"), toFieldStr("input", "time")];
-      case "URL":
-        return [toField("type", "String"), toFieldStr("input", "url")];
-      default:
-        /*console.log(
+        )
+      ),
+      toField("optional", "true")
+    ])
+  )
+];
+const handlePropertyType = possibleTypeName => {
+  switch (possibleTypeName) {
+    //@see https://github.com/VulcanJS/Vulcan/blob/devel/packages/vulcan-forms/lib/components/FormComponent.jsx#L56
+    case "Boolean":
+      return [toField("type", "Boolean"), toFieldStr("input", "checkbox")];
+    case "Date":
+      return [toField("type", "Date")];
+    case "DateTime":
+      return [toField("type", "Date"), toFieldStr("input", "datetime")];
+    case "Number":
+      return [toField("type", "Number"), toFieldStr("input", "number")];
+    case "Text":
+      return [toField("type", "String")];
+    case "Time":
+      return [toField("type", "Date"), toFieldStr("input", "time")];
+    case "URL":
+      return [toField("type", "String"), toFieldStr("input", "url")];
+
+    default:
+      /*console.log(
           `Possible types for ${schema["@id"]}: ${possibleTypes.map(
             p => p["@id"]
           )}`
         );*/
-        return [toField("type", "String")];
-    }
+      return [toField("type", "String")];
   }
 };
 
-/**
- * Create a vulcan property
- * @param {*} schema
- */
-const convertProperty = propertySchema =>
+const generateSpecificFields = schema => {
+  if (isNested(schema)) return [toField("type", "Object")];
+  const possibleTypes = getTypesAsArray(schema);
+  // TODO: should handle multiple types
+  const possibleType = possibleTypes[0];
+  const possibleTypeName = possibleType["@id"];
+  if (isClass(possibleType) && !DATA_TYPES.includes(possibleTypeName)) {
+    //console.log("possibleType", possibleTypeName);
+    return handleClassType(possibleTypeName);
+  } else {
+    return handlePropertyType(possibleTypeName);
+  }
+};
+// handle a property
+// create a Vulcan schema and additionnal schemas if needed (arrays, objects)
+const convertProperty = schema =>
   obj([
-    ...generateDescriptionFields(propertySchema),
-    ...DEFAULT_FIELD_PROPS,
-    ...handleType(propertySchema)
+    ...generateDescriptionFields(schema),
+    ...generateSpecificFields(schema),
+    ...DEFAULT_FIELD_PROPS
   ]);
 
 module.exports = {
   DATA_TYPES,
-  _handleType: handleType,
+  _handleType: generateSpecificFields,
   default: convertProperty
 };

@@ -6,10 +6,19 @@ const {
   default: handleSuperClasses
 } = require("../../src/schemaorg/preprocessor/handleSuperClasses");
 const {
-  default: handleTypes
-} = require("../../src/schemaorg/preprocessor/handleTypes");
+  default: handleProperties
+} = require("../../src/schemaorg/preprocessor/handleProperties");
+const {
+  default: nestProperties
+} = require("../../src/schemaorg/preprocessor/nestProperties");
 const VulcanSchemasGenerator = require("../../src/schemaorg/preprocessor/index");
-const { _normalizeGraph, _getGraph, SCHEMAS_PATH } = VulcanSchemasGenerator;
+const {
+  _normalizeGraph,
+  _getGraph,
+  _fillFields,
+  _fillPossibleTypes,
+  SCHEMAS_PATH
+} = VulcanSchemasGenerator;
 
 describe("schemaorg.tests.js", () => {
   describe("common", () => {
@@ -42,99 +51,109 @@ describe("schemaorg.tests.js", () => {
     const coffeeShop = {
       "@id": "CafeOrCoffeeShop"
     };
-    const restaurant = {
-      "@id": "Restaurant"
-    };
-    test("normalize a schema with no domains", () => {
+    test("transform the graph into a normalized hashMap", () => {
       const graph = [coffeeShop];
       const result = { [coffeeShop["@id"]]: coffeeShop };
       const normalizedGraph = _normalizeGraph(graph);
       expect(normalizedGraph).toBeInstanceOf(Object);
       expect(normalizedGraph).toMatchObject(result);
     });
+  });
 
+  describe("fillFields", () => {
+    const CafeOrCoffeeShop = {
+      "@id": "CafeOrCoffeeShop"
+    };
+    const Restaurant = {
+      "@id": "Restaurant"
+    };
     const someFieldId = {
-      "@id": "somefield"
+      "@id": "someField"
     };
     const someField = {
       ...someFieldId,
       domainIncludes: {
-        "@id": coffeeShop["@id"]
+        "@id": CafeOrCoffeeShop["@id"]
       }
     };
-    test("normalize a graph (one field one domain)", () => {
-      const graph = [coffeeShop, someField];
+    test("fill fields of a class (one field one domain)", () => {
+      const graph = { CafeOrCoffeeShop, someField };
       const result = {
-        [coffeeShop["@id"]]: {
-          ...coffeeShop,
+        [CafeOrCoffeeShop["@id"]]: {
+          ...CafeOrCoffeeShop,
           fields: { [someField["@id"]]: someFieldId }
         },
         [someField["@id"]]: someFieldId
       };
-      const normalizedGraph = _normalizeGraph(graph);
+      const normalizedGraph = _fillFields(graph);
       expect(normalizedGraph).toBeInstanceOf(Object);
       expect(normalizedGraph).toMatchObject(result);
     });
-    test("normalize a graph (one field many domains)", () => {
+    test("fill fields of a class (one field many domains)", () => {
       const someField = {
         ...someFieldId,
         domainIncludes: [
           {
-            "@id": coffeeShop["@id"]
+            "@id": CafeOrCoffeeShop["@id"]
           },
           {
-            "@id": restaurant["@id"]
+            "@id": Restaurant["@id"]
           }
         ]
       };
-      const graph = [coffeeShop, restaurant, someField];
+      const graph = { CafeOrCoffeeShop, Restaurant, someField };
       const result = {
-        [coffeeShop["@id"]]: {
-          ...coffeeShop,
+        [CafeOrCoffeeShop["@id"]]: {
+          ...CafeOrCoffeeShop,
           fields: { [someField["@id"]]: someFieldId }
         },
-        [restaurant["@id"]]: {
-          ...restaurant,
+        [Restaurant["@id"]]: {
+          ...Restaurant,
           fields: { [someField["@id"]]: someFieldId }
         },
         [someField["@id"]]: someFieldId
       };
-      const normalizedGraph = _normalizeGraph(graph);
+      const normalizedGraph = _fillFields(graph);
       expect(normalizedGraph).toBeInstanceOf(Object);
       expect(normalizedGraph).toMatchObject(result);
     });
-    test("normalize a graph when domain not yet seen(one field many domains)", () => {
+    test("fill fields of class a graph when domain not yet seen(one field many domains)", () => {
       const someField = {
         ...someFieldId,
         domainIncludes: [{ "@id": "CafeOrCoffeeShop" }, { "@id": "Restaurant" }]
       };
-      const graph = [coffeeShop, someField];
+      const graph = { CafeOrCoffeeShop, someField };
       const result = {
-        [coffeeShop["@id"]]: {
-          ...coffeeShop,
+        [CafeOrCoffeeShop["@id"]]: {
+          ...CafeOrCoffeeShop,
           fields: { [someField["@id"]]: someFieldId }
         },
-        [restaurant["@id"]]: {
+        [Restaurant["@id"]]: {
           fields: { [someField["@id"]]: someFieldId }
         },
         [someField["@id"]]: someFieldId
       };
-      const normalizedGraph = _normalizeGraph(graph);
+      const normalizedGraph = _fillFields(graph);
       expect(normalizedGraph).toBeInstanceOf(Object);
       expect(normalizedGraph).toMatchObject(result);
     });
 
-    test("remove the domainIncludes field from domains", () => {
-      const graph = [coffeeShop, someField];
+    test("remove the domainIncludes field in the class after processing", () => {
+      const graph = { CafeOrCoffeeShop, someField };
       const result = someFieldId;
-      const normalizedGraph = _normalizeGraph(graph);
+      const normalizedGraph = _fillFields(graph);
       expect(
-        normalizedGraph[coffeeShop["@id"]].fields[someField["@id"]]
+        normalizedGraph[CafeOrCoffeeShop["@id"]].fields[someField["@id"]]
       ).toMatchObject(result);
+    });
+    test("remove the domainIncludes field in the property after processing", () => {
+      const graph = { CafeOrCoffeeShop, someField };
+      const normalizedGraph = _fillFields(graph);
+      expect(normalizedGraph[someField["@id"]]).toMatchObject(someFieldId);
     });
   });
 
-  describe("rangeIncludes (possibleTypes)", () => {
+  describe("fillePossibleTypes (rangeIncludes)", () => {
     // rangeIncludes (= possibleTypes for the entity)
     const rangeFieldId = { "@id": "someRangeField" };
     const someTypeId = { "@id": "someType" };
@@ -145,7 +164,7 @@ describe("schemaorg.tests.js", () => {
           ...someTypeId
         }
       };
-      const graph = [rangeField];
+      const graph = { someRangeField: rangeField };
       const result = {
         [rangeField["@id"]]: {
           ...rangeFieldId,
@@ -154,7 +173,7 @@ describe("schemaorg.tests.js", () => {
           }
         }
       };
-      const normalizedGraph = _normalizeGraph(graph);
+      const normalizedGraph = _fillPossibleTypes(graph);
       expect(normalizedGraph).toMatchObject(result);
     });
     test("normalize the rangeIncludes (multiple ranges)", () => {
@@ -163,7 +182,7 @@ describe("schemaorg.tests.js", () => {
         ...rangeFieldId,
         rangeIncludes: [someTypeId, someOtherTypeId]
       };
-      const graph = [rangeField];
+      const graph = { someRangeField: rangeField };
       const result = {
         [rangeField["@id"]]: {
           ...rangeFieldId,
@@ -173,23 +192,22 @@ describe("schemaorg.tests.js", () => {
           }
         }
       };
-      const normalizedGraph = _normalizeGraph(graph);
+      const normalizedGraph = _fillPossibleTypes(graph);
       expect(normalizedGraph).toMatchObject(result);
     });
     test("should not add the possibleTypes prop when there are no types", () => {
-      const someOtherTypeId = { "@id": "someOtherType" };
       const noRangeField = {
         ...rangeFieldId
       };
-      const graph = [noRangeField];
-      const normalizedGraph = _normalizeGraph(graph);
+      const graph = { someRangeField: noRangeField };
+      const normalizedGraph = _fillPossibleTypes(graph);
       expect(
         normalizedGraph[noRangeField["@id"]].possibleTypes
       ).toBeUndefined();
     });
   });
 
-  describe("handleTypes", () => {
+  describe("handleProperties", () => {
     const property = {
       "@id": "withType",
       "@type": "rdfs:Property"
@@ -218,18 +236,79 @@ describe("schemaorg.tests.js", () => {
     };
     test("load a property definition", () => {
       const graph = { propertyOneSubproperty, someProperty };
-      const res = handleTypes(graph);
+      const res = handleProperties(graph);
       expect(
         res.propertyOneSubproperty.possibleTypes[someProperty["@id"]]
       ).toEqual(someProperty);
     });
     test("add the type to class fields", () => {
       const graph = { propertyOneClass, someClass };
-      const res = handleTypes(graph);
+      const res = handleProperties(graph);
       const expectedRes = R.omit(["smth"], someClass);
       expect(res.propertyOneClass.possibleTypes[someClass["@id"]]).toEqual(
         expectedRes
       );
+    });
+  });
+
+  describe("nestProperties", () => {
+    const logo = {
+      "@id": "logo",
+      "@type": "rdf:Property",
+      "rdfs:subPropertyOf": {
+        "@id": "image"
+      },
+      possibleTypes: {
+        URL: {
+          "@id": "URL",
+          "@type": "rdfs:Class"
+        }
+      }
+    };
+    const photo = {
+      "@id": "photo",
+      "@type": "rdf:Property",
+      "rdfs:subPropertyOf": {
+        "@id": "image"
+      },
+      possibleTypes: {
+        URL: {
+          "@id": "URL",
+          "@type": "rdfs:Class"
+        }
+      }
+    };
+    const SomeClass = {
+      "@id": "SomeClass",
+      "@type": "rdfs:Class",
+      fields: {
+        logo: {
+          "@id": "logo"
+        }
+      }
+    };
+    test("generate the nested property", () => {
+      const graph = { logo };
+      const res = nestProperties(graph);
+      const imageObject = res["imageObject"];
+      expect(imageObject).toBeDefined();
+      expect(imageObject).toBeInstanceOf(Object);
+      expect(imageObject["@id"]).toEqual("imageObject");
+      expect(imageObject["@type"]).toEqual("Nested");
+    });
+    test("replace the fields in the classes with the superproperty property", () => {
+      const graph = { SomeClass, logo };
+      const res = nestProperties(graph);
+      const imageObject = res["SomeClass"]["fields"]["imageObject"];
+      expect(imageObject).toBeDefined();
+      expect(imageObject).toBeInstanceOf(Object);
+      expect(imageObject["@id"]).toEqual("imageObject");
+    });
+    test("remove the unnecessary fields", () => {
+      const graph = { SomeClass, logo };
+      const res = nestProperties(graph);
+      const logoRes = res["SomeClass"]["fields"]["logo"];
+      expect(logoRes).toBeUndefined();
     });
   });
 
