@@ -118,13 +118,25 @@ const createFile = (outdir, filename, data) => {
 const run = (outdir = OUTDIR, schemasPath = SCHEMAS_PATH) => {
   createOutdir();
   R.pipe(
+    R.tap(() => console.log("Opening JSON")),
     openJSON,
+    R.tap(() => console.log("Getting the graph")),
     getGraph,
+    R.tap(() => console.log("Getting the graph")),
     scrapHttp,
+    R.tap(() => console.log("Scrap the http")),
     restructureGraph,
+    R.tap(() => console.log("Filling the possible types")),
     fillPossibleTypes,
+    R.tap(() => console.log("Filling the possibleTypes of Properties")),
     handleProperties, // fill the properties with their possibleTypes
+    R.tap(() => console.log("Handling nested properties")),
+    nestProperties,
+    R.tap(() => console.log("Filling the Class fields with own fields")),
     fillFields,
+    R.tap(() =>
+      console.log("Filling the Class fields with super classes fields")
+    ),
     handleSuperClasses,
     R.curry(createFile)(outdir, "schemaorg-normalized.jsonld")
   )(schemasPath);

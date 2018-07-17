@@ -91,6 +91,7 @@ const nestProperties = graph =>
       )(superProperties);
       // TODO: replace subProperty with superProperty
       const cleanedGraph = removeSubProperty(subProperty)(enhancedGraph);
+      console.log("Handling subProperty " + subProperty["@id"]);
       return cleanedGraph;
     },
     graph
