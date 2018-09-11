@@ -2,7 +2,7 @@
 
 This package is meant to allow automatic generation of Vulcan schemas from trusted sources (Schema.org for the moment).
 
-It is an experimental work under progress. Use with caution.
+It is a totally experimental work. Use with caution.
 
 ## Usage
 
@@ -14,7 +14,7 @@ The `schemaorg-normalized.jsonld` file contains an automatically preprocessed ve
 
 The `schemaNames` files exports an array of all the schemas... names.
 
-**Takes those schemas as inspiration sources only**, as they are not mature enough to work out-of-the-box (yet).
+**Takes those schemas as inspiration sources only**, as they are not mature enough to work out-of-the-box and are quite experimental. For example, you may notice that they include a lot of generic fields, like `identifierObject`.
 
 ## Schema building process
 
@@ -30,7 +30,7 @@ The preprocessing step restructures the schemas to make them easier to explore a
 
 - When a field references another class, we use a resolver. For example, if your Restaurant have a Menu, then you only need to store a reference to this Menu (its unique id). The Menu can then be fetched on demand.
 
-The resulting schemas are self-sufficient, excepts for reference to other classes. Therefore, they are a bit bloated, so don't hesitate to remove the props you don't need before using them.
+The resulting schemas are self-sufficient, excepts for reference to other classes. Therefore, they are a bit bloated.
 
 ## Contribution
 
@@ -41,3 +41,4 @@ The resulting schemas are self-sufficient, excepts for reference to other classe
 
 - Generate arrays (`supersededBy` property)
 - Handle the `inverseOf` property
+- Handle multiple possible types
