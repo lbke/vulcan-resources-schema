@@ -40,7 +40,7 @@ const removeFieldFromSchema = R.curry((fieldId, schema) => {
 const createSuperProperty = superPropertyId =>
   R.set(R.lensPath([superPropertyId]), {
     "@id": superPropertyId,
-    "@type": "Nested",
+    "@type": "NestedObject",
     fields: {}
   });
 

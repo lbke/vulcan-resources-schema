@@ -64,6 +64,7 @@ module.exports = {
   es6ExportDefault,
   objField,
   obj,
+  paren,
   str,
   templateStr,
   toField,

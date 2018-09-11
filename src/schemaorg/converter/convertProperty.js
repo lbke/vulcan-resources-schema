@@ -1,7 +1,14 @@
 const R = require("ramda");
 const JSGenerator = require("../../utils/JSGenerator");
 const DEFAULT_FIELD_PROPS = require("../../config/defaultFieldProperties");
-const { obj, toField, toFieldStr, arrowFunc, commaSeparated } = JSGenerator;
+const {
+  obj,
+  toField,
+  paren,
+  toFieldStr,
+  arrowFunc,
+  commaSeparated
+} = JSGenerator;
 const { isNested, isClass, getTypesAsArray } = require("../common");
 const { generateDescriptionFields } = require("./common");
 
@@ -71,8 +78,26 @@ const handlePropertyType = possibleTypeName => {
   }
 };
 
-const generateSpecificFields = schema => {
-  if (isNested(schema)) return [toField("type", "Object")];
+/**
+ * Generate object field properties
+ * type: new SimpleSchema({  ...the subschema })
+ * @param {*} propertyField
+ */
+const handleNestedType = (propertyField, generateFields) => {
+  // recursive call will generate the schema own subschema (for properties that are objects)
+  const nestedVulcanSchema = obj(generateFields(propertyField));
+  //console.log("nestedVulcanSchema", nestedVulcanSchema);
+  return [toField("type", "new SimpleSchema" + paren(nestedVulcanSchema))];
+};
+
+/**
+ * Generate the field specific to the schema
+ * @param {*} schema
+ */
+const generateSpecificFields = (schema, generateFields) => {
+  if (isNested(schema)) {
+    return handleNestedType(schema, generateFields);
+  }
   const possibleTypes = getTypesAsArray(schema);
   // TODO: should handle multiple types
   const possibleType = possibleTypes[0];
@@ -86,10 +111,10 @@ const generateSpecificFields = schema => {
 };
 // handle a property
 // create a Vulcan schema and additionnal schemas if needed (arrays, objects)
-const convertProperty = schema =>
+const convertProperty = (schema, generateFields) =>
   obj([
     ...generateDescriptionFields(schema),
-    ...generateSpecificFields(schema),
+    ...generateSpecificFields(schema, generateFields),
     ...DEFAULT_FIELD_PROPS
   ]);
 
