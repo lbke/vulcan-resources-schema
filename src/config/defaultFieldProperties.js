@@ -9,14 +9,9 @@ const {
   arrowFunc,
   commaSeparated
 } = JSGenerator;
-const fields = {
-  viewableBy: ["guests"],
-  editableBy: ["members"],
-  insertableBy: ["members"]
-};
 
 module.exports = [
-  toField("viewableBy", arr([str("guests")])),
-  toField("editableBy", arr([str("members")])),
-  toField("insertableBy", arr([str("members")]))
+  toField("canRead", arr([str("guests")])),
+  toField("canCreate", arr([str("members")])),
+  toField("canUpdate", arr([str("members")]))
 ];

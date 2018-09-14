@@ -15,10 +15,10 @@ const generateViewOnlyField = (fieldName, fieldValue) => {
       fieldName,
       obj([
         toField("type", "String"),
-        toField("defaultValue", fieldValue),
-        toField("viewableBy", '["guests"]'),
-        toField("editableBy", '["admins"]'),
-        toField("insertableBy", '["admins"]')
+        toField("default", fieldValue),
+        toField("canRead", '["guests"]'),
+        toField("canUpdate", '["admins"]'),
+        toField("canCreate", '["admins"]')
       ])
     )
   ];

@@ -1,6 +1,6 @@
 {
   "name": "vulcan-resources-schemas",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Generate vulcan schemas from trusted sources",
   "author": "Lebrun Burel Knowledge Engineering (LBKE) <contact@lebrun-burel.com>",
   "keywords": [

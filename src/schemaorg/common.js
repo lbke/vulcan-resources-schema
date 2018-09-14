@@ -10,7 +10,7 @@ const hasTypes = schema =>
 
 const typeEquals = R.propEq("@type");
 const isClass = typeEquals("rdfs:Class");
-const isNested = typeEquals("Nested");
+const isNested = typeEquals("NestedObject");
 
 const extractId = R.pipe(
   R.split("/"),
